@@ -7,20 +7,18 @@ import gc
 class easyWord(object):
 	"""docstring for ClassName"""
 	def __init__(self, FileName):
-		self.WordAPP = win32com.client.Dispatch('Word.Application')
-		self.WordAPP.Visible=0
-		self.WordAPP.DisplayAlerts = 0
+		self.WordAPP = win32com.client.DispatchEx('Word.Application')
+		self.WordAPP.Visible=False
+		self.WordAPP.DisplayAlerts = False
 		if FileName:
 			self.FileName = FileName
-			# print(FileName)
 			self.Doc = self.WordAPP.Documents.Open(FileName)
 		else:
 			raise "No input file!"
 			return
-	# def __del__(self):
-	# 	self.Doc.Close()
-	# 	self.WordAPP.Documents.Close(wc.wdDoNotSaveChanges)
-	# 	self.WordAPP.Quit()
+	def __del__(self):
+	 	self.Doc.Close()
+	 	self.WordAPP.Quit()
 	def PageCount(self):
 		return self.WordAPP.ActiveWindow.ActivePane.Pages.Count
 	def SetCell(self,R,C,Value):
@@ -33,19 +31,18 @@ class easyWord(object):
 class easyExcel(object):
 	"""docstring for easyExcel"""
 	def __init__(self, FileName):
-		self.ExcelApp = win32com.client.Dispatch('Excel.Application')
-		self.ExcelApp.Visible=0
-		self.ExcelApp.DisplayAlerts = 0
+		self.ExcelApp = win32com.client.DispatchEx('Excel.Application')
+		self.ExcelApp.Visible=False
+		self.ExcelApp.DisplayAlerts = False
 		if FileName:
 			self.FileName = FileName
-			self.Xls = self.ExcelApp.Workbooks.Open(FileName)
+			self.Xls = self.ExcelApp.Workbooks.Open(self.FileName)
 		else:
 			raise "No input file!"
 			return
-	# def __del__(self):
-	# 	self.Xls.Close()
-	# 	self.ExcelApp.Documents.Close(wc.wdDoNotSaveChanges)
-	# 	self.ExcelApp.Quit()
+	def __del__(self):
+		self.Xls.Close()
+		self.ExcelApp.Quit()
 	def PageCount(self):
 		"""目前只能计算只有一个工作表sheet的文档"""
 		return (self.ExcelApp.ActiveSheet.VPageBreaks.Count)*(self.ExcelApp.ActiveSheet.HPageBreaks.Count)
@@ -73,12 +70,14 @@ class Job(object):
 					subFilesOrDirs = os.listdir(fileOrDir)
 					filesCount=0
 					dirsCount = dirsCount + 1
-					for files in subFilesOrDirs:
-						if os.path.exists(self.RootPath+"卷内文件目录.doc"):
-							if os.path.exists(self.FilesPath +"卷内文件目录.doc"):
-								os.remove(self.FilesPath +"卷内文件目录.doc")
-							shutil.copyfile(self.RootPath+"卷内文件目录.doc", self.FilesPath +"卷内文件目录.doc")
 
+					if os.path.exists(self.RootPath+"卷内文件目录.doc"):
+						if os.path.exists(self.FilesPath +"卷内文件目录.doc"):
+							os.remove(self.FilesPath +"卷内文件目录.doc")
+						shutil.copyfile(self.RootPath+"卷内文件目录.doc", self.FilesPath +"卷内文件目录.doc")
+
+					# 获取所需数据
+					for files in subFilesOrDirs:
 						if files.startswith(('1','2','3','4','5','6','7','8','9','0')):
 							filesCount = filesCount + 1
 							(filepath,tempfilename) = os.path.split(files)
@@ -95,10 +94,7 @@ class Job(object):
 								self.adict[filename] = Excel.PageCount()
 								self.Pages = Excel.PageCount() + self.Pages
 								del Excel
-							#读取承包人人数
-							# if '登记簿' in files:
-							# 	TempWord = easyWord(self.FilesPath+files)
-							# 	self.PersonNumber = TempWord.ReadPersonNumbers()
+
 					if filesCount!=9 or len(files)==0:
 						print("Files in \"" + os.getcwd() + "\" occur error!")
 						print("Please Check the files")
@@ -150,6 +146,5 @@ class Job(object):
 			f3.close()
 
 if __name__ == '__main__':
-	rootpath = "C:\\Users\\mpi\\Desktop\\yunge\\"
+	rootpath = "E:\\PythonProjects\\AutoPagesCounter\\"
 	Jobb = Job(rootpath)
-	#print(Jobb.Pages)
