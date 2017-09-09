@@ -108,6 +108,13 @@ class Job(object):
 			print("No such path: "+self.RootPath)
 		else:
 			print("扫描 "+ self.RootPath)
+			if os.path.exists(self.RootPath+"卷内文件目录.doc"):
+				pass
+			else:
+				CDMF.print_red_text("在 "+ self.RootPath + " 没有找到\"卷内文件目录.doc\"")
+				CDMF.print_red_text("程序中断，请完善相应资料！")
+				quit = input("按任意键退出...")
+				return
 			# 询问是否全部重新计算
 			while True:
 				content = CDMF.print_green_text("是否需要新建或重新生成所有目录? 请输入y/Y或者n/N:")
@@ -118,13 +125,7 @@ class Job(object):
 			else:
 				self.bRegenerate = False
 
-			if os.path.exists(self.RootPath+"卷内文件目录.doc"):
-				pass
-			else:
-				CDMF.print_red_text("在 "+ self.RootPath + " 没有找到\"卷内文件目录.doc\"")
-				CDMF.print_red_text("程序中断，请完善相应资料！")
-				quit = input("按任意键退出...")
-				return
+
 			# 询问是否需要将“软卷皮封面.doc”考入个人目录
 			while True:
 				content = CDMF.print_green_text("是否需要将\"软卷皮封面.doc\"一并复制到个人目录? 请输入y/Y或者n/N:")
