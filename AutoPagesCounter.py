@@ -135,9 +135,17 @@ class Job(object):
 				self.CopyFengmiam = True
 				if not os.path.exists(self.RootPath+"软卷皮封面.doc"):
 					CDMF.print_red_text("在 "+ self.RootPath + " 没有找到\"软卷皮封面.doc\"")
-					CDMF.print_red_text("程序中断，请完善相应资料！")
-					quit = input("按任意键退出...")
-					return
+					while True:
+						content = CDMF.print_green_text("是否继续? 请输入y/Y或者n/N:")
+						if content=="y" or content=="Y" or content=="n" or content=="N":
+							break
+					if content=="y" or content=="Y":
+						self.CopyFengmiam = False
+						pass
+					else:
+						CDMF.print_red_text("程序中断，请完善相应资料！")
+						quit = input("按任意键退出...")
+						return
 			else:
 				self.CopyFengmiam = False
 
@@ -151,10 +159,10 @@ class Job(object):
 				self.TimesAdict = Excel.read_areacode_time()
 				del Excel
 			else:
-				CDMF.print_red_text("在 "+self.RootPath+" 中缺失\"地区代码及时间表.xlsx\"或\"地区代码及时间表.xls\",无法完成目录表中时间自动填充!\"")
+				CDMF.print_red_text("在 "+self.RootPath+" 没有找到\"地区代码及时间表.xlsx\"或\"地区代码及时间表.xls\",无法完成目录表中时间自动填充!\"")
 
 				while True:
-					content = input("是否继续? 请输入y/Y或者n/N:")
+					content = CDMF.print_green_text("是否继续? 请输入y/Y或者n/N:")
 					if content=="y" or content=="Y" or content=="n" or content=="N":
 						break
 				if content=="y" or content=="Y":
