@@ -7,9 +7,9 @@ import re
 import copy
 import os
 from multiprocessing import Pool
+from ProgressBar import ProgressBar
 
 CDMF = cmd_format.CmdFormat("特供赟哥")
-global_call_count = 0
 
 class easyWord(object):
 	"""docstring for ClassName"""
@@ -139,8 +139,6 @@ def Tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerateContent,bWithTime,bFillCov
 			if os.path.exists(PersionalDir +"软卷皮封面.doc"):
 				os.remove(PersionalDir +"软卷皮封面.doc")
 			shutil.copyfile(RootPath+"软卷皮封面.doc", PersionalDir +"软卷皮封面.doc")
-	global global_call_count
-	global_call_count += 1
 	# 获取所需数据
 	Pages_adict = {}
 	try:
@@ -175,11 +173,12 @@ def Tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerateContent,bWithTime,bFillCov
 				nTemp = nTemp + 1
 		if nTemp != 4: raise IOError
 	except Exception as e:
-		CDMF.print_red_text(" "+str(global_call_count) +"/"+str(nTotal)+ "   " + fileOrDir + "    操作失败")
-		f3.write(str(global_call_count)+"/"+str(nTotal) + "    " + fileOrDir + "\n")
-		f1.write(str(global_call_count) +"/"+str(nTotal)+ "    " + fileOrDir + "    操作失败" + "\n")
+		CDMF.print_red_text(fileOrDir + "    操作失败")
+		f3.write( fileOrDir + "\n")
+		f1.write( fileOrDir + "    操作失败" + "\n")
 		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
 			os.remove(PersionalDir +"卷内文件目录.doc")
+		bar.Move('')
 		return
 	else:
 		pass
@@ -325,9 +324,10 @@ def Tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerateContent,bWithTime,bFillCov
 		pass
 
 	# gc.collect()
-	f2.write(str(global_call_count) +"/"+str(nTotal)+ "    " +fileOrDir + "\n")
-	f1.write(str(global_call_count) +"/"+str(nTotal)+ "    " +fileOrDir + "    操作成功" + "\n")
-	print(" "+str(global_call_count) +"/"+str(nTotal)+ "   " +fileOrDir + "    操作成功")
+	f2.write(fileOrDir + "\n")
+	f1.write(fileOrDir + "    操作成功" + "\n")
+	print(fileOrDir + "    操作成功")
+	bar.Move('')
 # ---------------------------------------------------------------------------------------------------
 
 class Job(object):
@@ -360,6 +360,7 @@ class Job(object):
 				CDMF.print_red_text("在 "+ self.RootPath + " 没有找到\"卷内文件目录.doc\"")
 				CDMF.print_red_text("程序中断，请完善相应资料！")
 				quit = input("按任意键退出...")
+				self.Status = False
 				return
 			# 询问是否全部重新计算
 			while True:
@@ -391,6 +392,7 @@ class Job(object):
 					else:
 						CDMF.print_red_text("程序中断，请完善相应资料！")
 						quit = input("按任意键退出...")
+						self.Status = False
 						return
 			else:
 				self.CopyFengmian = False
@@ -432,60 +434,76 @@ class Job(object):
 				else:
 					CDMF.print_red_text("程序中断，请完善相应资料！")
 					quit = input("按任意键退出...")
+					self.Status = False
 					return
 			CDMF.print_blue_text("扫描待统计村民资料...,")
-			nNumFile = 0;
-			nNumNoContent = 0;
+			self.nNumFile = 0;
+			self.nNumNoContent = 0;
 			for fileOrDir in self.filesOrDirsInRoot:
 				if os.path.isdir(fileOrDir) and fileOrDir.startswith(('1','2','3','4','5','6','7','8','9','0')):
-					nNumFile = nNumFile + 1
-					if not os.path.exists(self.RootPath + fileOrDir + "\\" +"卷内文件目录.doc"):
-						nNumNoContent  = nNumNoContent + 1
+					self.nNumFile = self.nNumFile + 1
+					if not os.path.exists(self.RootPath + fileOrDir + "\\" +"卷内文件目录.doc"): #扫描没有目录的
+						self.nNumNoContent  = self.nNumNoContent + 1
 
-			CDMF.print_blue_text("扫描完毕！共有 "+str(nNumFile) + " 户的资料,", endd='')
-			if nNumFile==0:
+			CDMF.print_blue_text("扫描完毕！共有 "+str(self.nNumFile) + " 户的资料,")
+			if self.nNumFile==0:
 				quit = input("按任意键退出...")
+				self.Status = False
 				return
 			if self.bRegenerate:
-				CDMF.print_blue_text("需要统计的有 "+str(nNumFile) + " 户.")
-				nTotal = nNumFile
+				CDMF.print_blue_text("需要统计的有 "+str(self.nNumFile) + " 户.")
+				self.nTotal = self.nNumFile
 			else:
-				CDMF.print_blue_text("需要统计的有 "+str(nNumNoContent) + " 户.")
-				if nNumNoContent==0:
+				CDMF.print_blue_text("需要统计的有 "+str(self.nNumNoContent) + " 户.")
+				self.nTotal = self.nNumFile
+				if self.nNumNoContent==0:
 					CDMF.print_blue_text("已经没有需要统计的村民了.")
 					quit = input("按任意键退出...")
+					self.Status = False
 					return
-				nTotal = nNumNoContent
+			self.Status = True
 
 	def run(self,pros):
 		f1 = open('全部操作.txt','w')
 		f2 = open('操作成功.txt','w')
 		f3 = open('操作失败.txt','w')
-		#dirsCount = 0
-		CDMF.print_yellow_text("------------------------------------------------")
-		CDMF.print_yellow_text(" 序号        户主编号与名字           操作状态")
-		CDMF.print_yellow_text("------------------------------------------------")
+		CDMF.print_yellow_text("------------------------------ 开始统计 ----------------------------------")
+		# CDMF.print_yellow_text("------------------------------------------------")
+		# CDMF.print_yellow_text(" 序号        户主编号与名字           操作状态")
+		# CDMF.print_yellow_text("------------------------------------------------")
 
 		#多进程
-		multiP = Pool(pros)
-		for fileOrDir in self.filesOrDirsInRoot:
-			if os.path.isdir(fileOrDir) and fileOrDir.startswith(('1','2','3','4','5','6','7','8','9','0')):
-				multiP.apply_async(Tasks, args=(fileOrDir,self.RootPath,self.AreaTimeAdict,self.bRegenerate,self.bWithTime,self.CopyFengmian))
-		multiP.close()
-		multiP.join()
-
-		CDMF.print_yellow_text("------------------------------------------------")
-		f1.close()
-		f2.close()
-		f3.close()
-		CDMF.print_blue_text("任务完成，可查看生成的.txt日志.")
-		quit = input("按任意键退出...")
-
-
-
-
+		try:
+			multiP = Pool(pros)
+			bar = ProgressBar(total=self.nTotal,width=80)
+			for fileOrDir in self.filesOrDirsInRoot:
+				if os.path.isdir(fileOrDir) and fileOrDir.startswith(('1','2','3','4','5','6','7','8','9','0')):
+					multiP.apply_async(Tasks, args=(fileOrDir,self.RootPath,self.AreaTimeAdict,self.bRegenerate,self.bWithTime,self.CopyFengmian,bar))
+			multiP.close()
+			multiP.join()
+			self.Status = True
+		except Exception as e:
+			CDMF.print_red_text("运行出现错误！")
+			self.Status = False
+			raise 
+		else:
+			pass
+		finally:
+			pass
+		if self.Status:
+			CDMF.print_yellow_text("------------------------------ 统计完毕 ----------------------------------")
+			f1.close()
+			f2.close()
+			f3.close()
+			CDMF.print_blue_text("任务完成，可查看生成的.txt日志.")
+			quit = input("按任意键退出...")
+		else:
+			CDMF.print_red_text("运行出现错误！")
+			self.Status = False
+			raise 
 
 if __name__ == '__main__':
 	rootpath = os.getcwd()
 	Jobb = Job(rootpath)
-	Jobb.run(2)
+	if(Jobb.Status): Jobb.run(2)
+	
