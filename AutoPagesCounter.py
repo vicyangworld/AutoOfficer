@@ -12,36 +12,37 @@ CDMF = cmd_format.CmdFormat("特供赟哥")
 class easyWord(object):
 	"""docstring for ClassName"""
 	def __init__(self, FileName):
-		self.WordAPP = win32com.client.DispatchEx('Word.Application')
+		self.WordAPP = win32com.client.Dispatch('Word.Application')
 		self.WordAPP.Visible=False
 		self.WordAPP.DisplayAlerts = False
 		if FileName:
 			self.FileName = FileName
 			self.Doc = self.WordAPP.Documents.Open(FileName)
 		else:
-			raise "No input file!"
+			raise IOError("文件 "+FileName+" 没找到！")
 			return
-	def __del__(self):
-	 	self.Doc.Close()
-	 	self.WordAPP.Quit()
 	def PageCount(self):
 		return self.WordAPP.ActiveWindow.ActivePane.Pages.Count
 	def SetCell(self,R,C,Value,TableIndex=0,FontSize=-1):
 		#Range是一个非常重要的概念，可以设置字体，行间距，文本！！
 		self.Doc.Tables[TableIndex].Rows[R].Cells[C].Range.Text = Value
 		if FontSize!=-1:
-			self.Doc.Tables[TableIndex].Rows[R].Cells[C].Range.Font.Size = FontSize#小二
+			self.Doc.Tables[TableIndex].Rows[R].Cells[C].Range.Font.Size = FontSize
 	def GetCell(self,R,C,TableIndex=0):
 		return self.Doc.Tables[TableIndex].Rows[R].Cells[C].Range.Text
 	def ReadPersonNumbers(self):
 		return self.Doc.Tables[1].Rows.Count-1
 	def ReadCunZhang(self):
 		return self.Doc.Tables[0].Rows[2].Cells[1].Range.Text
+	def Close(self):
+		self.Doc.Close()
+		self.WordAPP.Quit()
+		del self.WordAPP
 
 class easyExcel(object):
 	"""docstring for easyExcel"""
 	def __init__(self, FileName):
-		self.ExcelApp = win32com.client.DispatchEx('Excel.Application')
+		self.ExcelApp = win32com.client.Dispatch('Excel.Application')
 		self.ExcelApp.Visible=False
 		self.ExcelApp.DisplayAlerts = False
 		if FileName:
@@ -50,9 +51,11 @@ class easyExcel(object):
 		else:
 			raise IOError("文件 "+FileName+" 没找到！")
 			return
-	def __del__(self):
-		self.Xls.Close()
+	def Close(self):
+		self.Xls.Close(SaveChanges=0)
 		self.ExcelApp.Quit()
+		del self.ExcelApp
+		#self.ExcelApp.Quit()
 	def PageCount(self):
 		pages = 0
 		for x in range(1,self.Xls.Worksheets.Count+1):
@@ -61,7 +64,7 @@ class easyExcel(object):
 			# Activesheet.VPageBreaks.Count
 			# Activesheet.HPageBreaks.Count
 			pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
-			self.ExcelApp.Volatile
+			# self.ExcelApp.Volatile
 		return pages
 	def read_areacode_time(self):
 		AreaTimeAdict = {}
@@ -104,6 +107,7 @@ class easyExcel(object):
 			CDMF.print_blue_text("成功, 共有 "+str(nValidRows)+" 个村庄.")
 		CDMF.print_blue_text("有效村庄共有 "+str(len(AreaTimeAdict))+" 个.")
 		return AreaTimeAdict
+
 class Job(object):
 	"""docstring for Job"""
 	def __init__(self, RootPath):
@@ -182,7 +186,7 @@ class Job(object):
 					pass
 				finally:
 					pass
-				del Excel
+				Excel.Close()
 			elif "地区代码及时间表.xls" in filesOrDirs:
 				CDMF.print_blue_text("正在读取 \"地区代码及时间表.xls\"...")
 				Excel = easyExcel(self.RootPath+"地区代码及时间表.xls")
@@ -194,7 +198,7 @@ class Job(object):
 					pass
 				finally:
 					pass
-				del Excel
+				Excel.Close()
 			else:
 				CDMF.print_red_text("在 "+self.RootPath+" 没有找到\"地区代码及时间表.xlsx\"或\"地区代码及时间表.xls\",无法完成目录表中时间自动填充!\"")
 
@@ -293,12 +297,12 @@ class Job(object):
 									if '登记簿' in files:
 										self.CunZhang=Word.ReadCunZhang()[:-2] #去掉最后两个字符：一个是BEL,一个是换行
 										self.PersonNumber = Word.ReadPersonNumbers()
-									del Word
+									Word.Close()
 								elif extension==r".xlsx" or extension==r".xls":
 									Excel = easyExcel(self.FilesPath+files)
 									self.adict[filename] = Excel.PageCount()
 									self.Pages = self.adict[filename] + self.Pages
-									del Excel
+									Excel.Close()
 						nTemp = 0
 						bFirst = True
 						for x in self.adict.keys():
@@ -326,7 +330,7 @@ class Job(object):
 
 					# 更新“卷内文件目录.doc”
 					try:
-						Word2 = easyWord(self.FilesPath+"卷内文件目录.doc")
+						Word = easyWord(self.FilesPath+"卷内文件目录.doc")
 					except Exception as e:
 						CDMF.print_red_text("出错！请检查是否在 "+self.FilesPath+"存在 \"卷内文件目录.doc\" .")
 					else:
@@ -336,10 +340,10 @@ class Job(object):
 					bOprater = True
 					# 填写目录的第1顺序号
 					nTotalPages = 1
-					Word2.SetCell(1,2,self.HuZhu) # "责任者"
+					Word.SetCell(1,2,self.HuZhu) # "责任者"
 					if self.WithTime:
-						Word2.SetCell(1,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[1])  # "日期"
-					Word2.SetCell(1,5,nTotalPages)     # "页号"
+						Word.SetCell(1,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[1])  # "日期"
+					Word.SetCell(1,5,nTotalPages)     # "页号"
 
 					# 填写目录的第2顺序号
 					for x in self.adict.keys():
@@ -349,10 +353,10 @@ class Job(object):
 							break
 					if not bDjb:
 						raise OverflowError("没有找到 “承包经营权登记簿”")
-					Word2.SetCell(2,2,self.HuZhu)
+					Word.SetCell(2,2,self.HuZhu)
 					if self.WithTime:
-						Word2.SetCell(2,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[2])  # "日期"
-					Word2.SetCell(2,5,nTotalPages)
+						Word.SetCell(2,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[2])  # "日期"
+					Word.SetCell(2,5,nTotalPages)
 
 					# 填写目录的第3顺序号
 					bDjb = False
@@ -363,66 +367,66 @@ class Job(object):
 							break
 					if not bDjb:
 						nTotalPages = nTotalPages + 1 #如果没有承包方调查表，默认承包方调查表为1页
-					Word2.SetCell(3,2,self.HuZhu)
+					Word.SetCell(3,2,self.HuZhu)
 					if self.WithTime:
-						Word2.SetCell(3,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[3])  # "日期"
-					Word2.SetCell(3,5,nTotalPages)
+						Word.SetCell(3,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[3])  # "日期"
+					Word.SetCell(3,5,nTotalPages)
 
 					# 填写目录的第4顺序号
 					for x in self.adict.keys():
 						if '地块调查表' in x:
 							nTotalPages = self.adict[x]+nTotalPages
-					Word2.SetCell(4,2,self.HuZhu)
+					Word.SetCell(4,2,self.HuZhu)
 					if self.WithTime:
-						Word2.SetCell(4,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[4])  # "日期"
-					Word2.SetCell(4,5,nTotalPages)
+						Word.SetCell(4,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[4])  # "日期"
+					Word.SetCell(4,5,nTotalPages)
 
 					# 填写目录的第5顺序号
 					for x in self.adict.keys():
 						if '公示结果归户表' in x:
 							nTotalPages = self.adict[x]+nTotalPages
 							#承包方推荐证明
-					Word2.SetCell(5,2,self.HuZhu)
+					Word.SetCell(5,2,self.HuZhu)
 					if self.WithTime:
-						Word2.SetCell(5,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[5])  # "日期"
-					Word2.SetCell(5,5,nTotalPages)
+						Word.SetCell(5,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[5])  # "日期"
+					Word.SetCell(5,5,nTotalPages)
 					nTotalPages = nTotalPages+1
 
 					# 填写目录的第6顺序号
-					Word2.SetCell(6,2,self.CunZhang+self.HuZhu)
+					Word.SetCell(6,2,self.CunZhang+self.HuZhu)
 					if self.WithTime:
-						Word2.SetCell(6,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[6])  # "日期"
-					Word2.SetCell(6,5,nTotalPages)
+						Word.SetCell(6,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[6])  # "日期"
+					Word.SetCell(6,5,nTotalPages)
 					for x in self.adict.keys():
 						if '承包合同' in x:
 							nTotalPages = self.adict[x]+nTotalPages
 
 					# 填写目录的第7顺序号
 					#户主户口本及身份证复印件
-					Word2.SetCell(7,2,self.HuZhu)
+					Word.SetCell(7,2,self.HuZhu)
 					if self.WithTime:
-						Word2.SetCell(7,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[7])  # "日期"
-					Word2.SetCell(7,5,str(nTotalPages)+"-"+str(nTotalPages+self.PersonNumber))
+						Word.SetCell(7,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[7])  # "日期"
+					Word.SetCell(7,5,str(nTotalPages)+"-"+str(nTotalPages+self.PersonNumber))
 					nTotalPages = nTotalPages +self.PersonNumber
 					self.adict.clear()
-					del Word2
+					Word.Close()
 
 					# 更新软卷皮封面.doc”
 					try:
-						Word3 = easyWord(self.FilesPath+"软卷皮封面.doc")
+						Word = easyWord(self.FilesPath+"软卷皮封面.doc")
 					except Exception as e:
 						CDMF.print_red_text("出错！请检查是否在 "+self.FilesPath+"存在 \"软卷皮封面.doc\" .")
 					else:
 						pass
 					finally:
 						pass
-					mxxx = re.split(r'([镇村（])', Word3.GetCell(2,0))  # r'([镇村（])'加括号保留分隔符
+					mxxx = re.split(r'([镇村（])', Word.GetCell(2,0))  # r'([镇村（])'加括号保留分隔符
 					mxxx[0] = '\r'+(self.AreaTimeAdict[self.HuZhuVillageCode])[0][0]
 					mxxx[2] = (self.AreaTimeAdict[self.HuZhuVillageCode])[0][1]
 					mxxx[4] = self.HuZhu
-					Word3.SetCell(2,0,''.join(mxxx),FontSize=18)
+					Word.SetCell(2,0,''.join(mxxx),FontSize=18)
 
-					mxxx = re.split(r'([自年(月至)])', Word3.GetCell(3,0))
+					mxxx = re.split(r'([自年(月至)])', Word.GetCell(3,0))
 					if mxxx[-1]!='月':
 						mxxx.pop()
 					if mxxx[0]!='自':
@@ -440,9 +444,9 @@ class Job(object):
 						mxxx[9] = ''.join(list((self.AreaTimeAdict[self.HuZhuVillageCode])[1])[5:6])
 					else:
 						mxxx[9] = ''.join(list((self.AreaTimeAdict[self.HuZhuVillageCode])[1])[4:6])
-					Word3.SetCell(3,0,''.join(mxxx),FontSize=18)
+					Word.SetCell(3,0,''.join(mxxx),FontSize=18)
 
-					mxxx = re.split(r'([共件页])', Word3.GetCell(4,0))
+					mxxx = re.split(r'([共件页])', Word.GetCell(4,0))
 					if mxxx[-1]!='页':
 						mxxx.pop()
 					if mxxx[0]!='本卷':
@@ -452,18 +456,18 @@ class Job(object):
 						return
 					mxxx[2] = '   7   '
 					mxxx[4] = '   '+str(nTotalPages)+'   '
-					Word3.SetCell(4,0,''.join(mxxx),FontSize=18)
+					Word.SetCell(4,0,''.join(mxxx),FontSize=18)
 
 					#设置表2的全宗号
-					Word3.SetCell(1,0,'53',TableIndex=1,FontSize=12)#小四
+					Word.SetCell(1,0,'53',TableIndex=1,FontSize=12)#小四
 					#设置表2的分类号
 					strTemp = 'TQ0202'+(self.AreaTimeAdict[self.HuZhuVillageCode])[0][2]+(self.AreaTimeAdict[self.HuZhuVillageCode])[8]
-					Word3.SetCell(1,1,strTemp,TableIndex=1,FontSize=12)#小四
+					Word.SetCell(1,1,strTemp,TableIndex=1,FontSize=12)#小四
 					#设置表2的案卷号
-					Word3.SetCell(1,2,str(self.HuzhuPersonalCode),TableIndex=1,FontSize=12)#小四
+					Word.SetCell(1,2,str(self.HuzhuPersonalCode),TableIndex=1,FontSize=12)#小四
 
-					del Word3
-					gc.collect()
+					Word.Close()
+					# gc.collect()
 					f2.write(str(dirsCount) +"/"+str(nTotal)+ "    " +fileOrDir + "\n")
 					f1.write(str(dirsCount) +"/"+str(nTotal)+ "    " +fileOrDir + "    操作成功" + "\n")
 					print(" "+str(dirsCount) +"/"+str(nTotal)+ "   " +fileOrDir + "    操作成功")
