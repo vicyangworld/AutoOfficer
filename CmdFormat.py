@@ -14,7 +14,7 @@ BACKGROUND_BLUE = 0x10 # background color contains blue.
 BACKGROUND_GREEN= 0x20 # background color contains green.
 BACKGROUND_RED = 0x40 # background color contains red.
 BACKGROUND_INTENSITY = 0x80 # background color is intensified.
-    
+
 class  CmdFormat(object):
     """docstring for  CmdFormat"""
     std_out_handle = ctypes.windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
@@ -29,7 +29,7 @@ class  CmdFormat(object):
     def set_cmd_color(self, color, handle=std_out_handle):
         bool = ctypes.windll.kernel32.SetConsoleTextAttribute(handle, color)
         return bool
-    
+
     def reset_color(self):
         self.set_cmd_color(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY)
 
@@ -41,7 +41,7 @@ class  CmdFormat(object):
         self.set_cmd_color(4 | 8)
         print(print_text,end=end)
         self.reset_color()
-        
+
     def print_green_input_text(self, print_text):
         self.set_cmd_color(FOREGROUND_GREEN | FOREGROUND_INTENSITY)
         c = input(print_text)
@@ -53,12 +53,12 @@ class  CmdFormat(object):
         print(print_text,end=end)
         self.reset_color()
 
-    def print_yellow_text(self, print_text,end='\n'): 
+    def print_yellow_text(self, print_text,end='\n'):
         self.set_cmd_color(6 | 8)
         print(print_text,end=end)
         self.reset_color()
 
-    def print_blue_text(self, print_text,end='\n'): 
+    def print_blue_text(self, print_text,end='\n'):
         self.set_cmd_color(1 | 10)
         print(print_text,end=end)
         self.reset_color()
