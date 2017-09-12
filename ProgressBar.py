@@ -10,7 +10,7 @@ class ProgressBar(CmdFormat):
         self.bWithheader = bWithheader
         self.bWithPercent = bWithPercent
         self.__barColor = barColor
-    def _private_set_bar_color(self):
+    def __private_set_bar_color(self):
         if type(self.__barColor) != type('a'):
             raise TypeError("Wrong argument type of __set_bar_color(color) in class ProgressBar！")
         if self.__barColor=='red':
@@ -26,20 +26,20 @@ class ProgressBar(CmdFormat):
 
     def Move(self, s):
         self.count += 1
-        sys.stdout.write(' '*(self.width + 20) + '\r')
+        sys.stdout.write(' '*(self.width + 100) + '\r')
         sys.stdout.flush()
         print(s)
         progress = self.width * self.count / self.total
-        if(self.bWithheader):sys.stdout.write('{0:3}/{1:3}:'.format(self.count, self.total))
-
+       #if(self.bWithheader):sys.stdout.write('{0:3}/{1:3}:'.format(self.count, self.total))
+        if(self.bWithheader):sys.stdout.write(str(self.count)+'/'+str(self.total))
         percent = self.count / self.total * 100.0
 
         if(self.bWithPercent):
-            self._private_set_bar_color()
+            self.__private_set_bar_color()
             sys.stdout.write('[' + int(progress)*'>' + int(self.width - progress)*'-' + ']' + ' %.2f' % percent + '%' + '\r')
             self.reset_color()
         else:
-            self._private_set_bar_color()
+            self.__private_set_bar_color()
             sys.stdout.write('[' + int(progress)*'>' + int(self.width - progress)*'-' + ']'+'\r')
             self.reset_color()
         if progress == self.width:
