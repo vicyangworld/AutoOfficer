@@ -1,4 +1,4 @@
-# AutoOfficer(N Used Before:AutoPagesCouter)
+# AutoOfficer(Name Used Before:AutoPagesCouter)
 My Practice For Liwanyun. He wants to count pages of thousands of words and excels and automatically fill some word files. So I help him and practice my python skill.
 Usage:
 1. Download AutoOfficer package and unzip it;
