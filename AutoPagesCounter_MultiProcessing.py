@@ -6,14 +6,18 @@ import gc
 import re
 import copy
 import os
-from multiprocessing import Pool
-from multiprocessing import cpu_count
+from multiprocessing import Pool,cpu_count,cpu_count,freeze_support
 from ProgressBar import ProgressBar
 import time
 import socket
+import multiProcessPackage
 
 CDMF = CmdFormat.CmdFormat("特供赟哥")
 ISOTIMEFORMAT='%Y-%m-%d %X'
+
+def myLog(x):
+	with open('操作结果.txt', 'a+') as f:
+		f.write(str(x)+'\n')
 
 class easyWord(object):
 	"""docstring for ClassName"""
@@ -25,6 +29,7 @@ class easyWord(object):
 			self.FileName = FileName
 			self.Doc = self.WordAPP.Documents.Open(FileName)
 		else:
+			myLog("文件 "+FileName+" 没找到！")
 			raise IOError("文件 "+FileName+" 没找到！")
 			return
 	def PageCount(self):
@@ -56,6 +61,7 @@ class easyExcel(object):
 			self.FileName = FileName
 			self.Xls = self.ExcelApp.Workbooks.Open(self.FileName)
 		else:
+			myLog("文件 "+FileName+" 没找到！")
 			raise IOError("文件 "+FileName+" 没找到！")
 			return
 	def Close(self):
@@ -79,6 +85,7 @@ class easyExcel(object):
 			nValidRows = 0
 			Activesheet = self.Xls.Worksheets(x)
 			CDMF.print_blue_text("提取 "+Activesheet.Name +" 信息...",end='')
+			myLog("提取 "+Activesheet.Name +" 信息...")
 			# UsedRange 从1开始
 			nTempCode = Activesheet.Cells(1,1).Value
 			nRows = Activesheet.UsedRange.Rows.Count
@@ -112,9 +119,10 @@ class easyExcel(object):
 				AreaTimeAdict[key]=tempList.copy()
 				tempList.clear()
 			CDMF.print_blue_text("成功, 共有 "+str(nValidRows)+" 个村庄.")
+			myLog("成功, 共有 "+str(nValidRows)+" 个村庄.")
 		CDMF.print_blue_text("有效村庄共有 "+str(len(AreaTimeAdict))+" 个.")
+		myLog("有效村庄共有 "+str(len(AreaTimeAdict))+" 个.")
 		return AreaTimeAdict
-
 
 # 核心函数--------------------------------------------------------------------------------------------
 # 实例方法，类方法不能被pickle(序列化)，apply_asyn()需要序列化数据
@@ -125,7 +133,6 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 	# 获取户主所在村庄的编号，前12位
 	HuZhuVillageCode = (fileOrDir.split('_')[0])[0:12]   #个人所在的村的Code
 	HuzhuPersonalCode= (fileOrDir.split('_')[0])[-3:]  #个人的Code，可以填在“软卷皮封面.doc”中的案卷号中
-
 	PersionalDir = RootPath + fileOrDir + "\\"
 	FileOrDirInPersionalDir_list = os.listdir(fileOrDir)
 	filesCount=0
@@ -182,14 +189,10 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		finish=time.clock()
 		infoString = ' '+str(ProcessOrder)+'/'+str(nTotal)+'     ' +fileOrDir + "       操作失败" +"          "+str(finish-start)[0:6]
 		CDMF.print_red_text(infoString)
-		#f1.write( fileOrDir + "    操作失败: 可能是因为文件缺失，请检查是否具有“登记簿”,“承包合同”,“地块调查表”,“公示结果归户表” ")
 		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
 			os.remove(PersionalDir +"卷内文件目录.doc")
-		return infoString
-	else:
-		pass
-	finally:
-		pass
+		myLog(infoString)
+		return
 	# 更新“卷内文件目录.doc”
 	try:
 		Word = easyWord(PersionalDir+"卷内文件目录.doc")
@@ -204,10 +207,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		for x in Pages_adict.keys():
 			if '登记簿' in x:
 				nTotalPages = Pages_adict[x]+nTotalPages
-				bDjb = True
 				break
-		if not bDjb:
-			raise OverflowError("没有找到 “承包经营权登记簿”")
 		Word.SetCell(2,2,HuZhu)
 		if bWithTime:
 			Word.SetCell(2,4,(AreaTimeAdict[HuZhuVillageCode])[2])  # "日期"
@@ -268,11 +268,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 	except Exception as e:
 		infoString = "更新 "+PersionalDir+"\"卷内文件目录.doc\" 发生错误."
 		CDMF.print_red_text(infoString)
-		return infoString
-	else:
-		pass
-	finally:
-		pass
+		myLog(infoString)
+		return
 
 	# 更新软卷皮封面.doc”
 	try:
@@ -292,8 +289,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 				del mxxx[0]
 			if len(mxxx) < 10:
 				infoString = "需要检查软卷皮封面模板中“自X年X月至X年X月”"
-				raise OverflowError(infoString)
-				return infoString
+				myLog(infoString)
+				return
 			mxxx[1] = ''.join(list((AreaTimeAdict[HuZhuVillageCode])[7])[0:4])
 			if list((AreaTimeAdict[HuZhuVillageCode])[7])[4]=='0':
 				mxxx[3] = ''.join(list((AreaTimeAdict[HuZhuVillageCode])[7])[5:6])
@@ -313,8 +310,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 				del mxxx[0]
 			if len(mxxx) < 6:
 				infoString = "需要检查软卷皮封面模板中“本卷共X件X页”"
-				raise OverflowError(infoString)
-				return infoString
+				myLog(infoString)
+				return
 			mxxx[2] = '   7   '
 			mxxx[4] = '   '+str(nTotalPages)+'   '
 			Word.SetCell(4,0,''.join(mxxx),FontSize=18)
@@ -329,21 +326,15 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			Word.Close()
 	except Exception as e:
 		infoString = "更新 "+PersionalDir+"\"软卷皮封面.doc\" 发生错误."
-		CDMF.print_red_text(infoString)
-		return infoString
-	else:
-		pass
-	finally:
-		pass
+		myLog(infoString)
+		return
+
 	finish=time.clock()
 	infoString = ' '+str(ProcessOrder)+'/'+str(nTotal)+'     ' +fileOrDir + "       操作成功" +"          "+str(finish-start)[0:6]
 	print(infoString)
-	return infoString
+	myLog(infoString)
+	return
 # ---------------------------------------------------------------------------------------------------
-
-def myLog(x):
-	with open('操作结果.txt', 'a+') as f:
-		f.write(str(x)+'\n')
 
 class Job(object):
 	"""docstring for Job"""
@@ -363,6 +354,7 @@ class Job(object):
 		print("========================================================================")
 		self.RootPath = RootPath+"\\"
 		self.bWithTime = True
+		self.Status  = True
 		try:
 			self.filesOrDirsInRoot = os.listdir(self.RootPath)
 		except Exception:
@@ -374,10 +366,12 @@ class Job(object):
 			else:
 				infoString = "在 "+ self.RootPath + " 没有找到\"卷内文件目录.doc\""
 				CDMF.print_red_text(infoString)
+				myLog(infoString)
 				CDMF.print_red_text("程序中断，请完善相应资料！")
-				quit = input("按任意键退出...")
 				self.Status = False
-				return infoString
+				quit = input("按任意键退出...")
+				return
+
 			# 询问是否全部重新计算
 			while True:
 				content = CDMF.print_green_input_text("是否需要新建或重新生成所有目录? 请输入y/Y或者n/N:")
@@ -397,6 +391,7 @@ class Job(object):
 				self.CopyFengmian = True
 				if not os.path.exists(self.RootPath+"软卷皮封面.doc"):
 					infoString = "在 "+ self.RootPath + " 没有找到\"软卷皮封面.doc\""
+					myLog(infoString + "  已忽略此项")
 					CDMF.print_red_text(infoString)
 					while True:
 						content1 = CDMF.print_green_input_text("是否继续? 请输入y/Y或者n/N:")
@@ -404,63 +399,60 @@ class Job(object):
 							break
 					if content1=="y" or content1=="Y":
 						self.CopyFengmian = False
-						pass
 					else:
 						CDMF.print_red_text("程序中断，请完善相应资料！")
 						quit = input("按任意键退出...")
 						self.Status = False
-						return infoString
+						myLog(infoString + "  请完善！")
+						return
 			else:
 				self.CopyFengmian = False
 
 			if "地区代码及时间表.xlsx" in self.filesOrDirsInRoot:
 				CDMF.print_blue_text("正在读取 \"地区代码及时间表.xlsx\"...")
+				myLog("正在读取 \"地区代码及时间表.xlsx\"...")
 				Excel = easyExcel(self.RootPath+"地区代码及时间表.xlsx")
 				try:
 					self.AreaTimeAdict = Excel.read_areacode_time()
 				except Exception as e:
 					infoString = "读取 \"地区代码及时间表.xlsx\" 出错！请检查该文件是否符合模板要求！"
 					CDMF.print_red_text(infoString)
+					myLog(infoString)
 					self.bWithTime = False
 					CDMF.print_red_text("程序中断，请完善相应资料！")
 					quit = input("按任意键退出...")
 					self.Status = False
-					return infoString
-				else:
-					pass
-				finally:
-					pass
+					return
 				Excel.Close()
 			elif "地区代码及时间表.xls" in self.filesOrDirsInRoot:
 				CDMF.print_blue_text("正在读取 \"地区代码及时间表.xls\"...")
+				myLog("正在读取 \"地区代码及时间表.xls\"...")
 				Excel = easyExcel(self.RootPath+"地区代码及时间表.xls")
 				try:
 					self.AreaTimeAdict = Excel.read_areacode_time()
 				except Exception as e:
 					infoString = "读取 \"地区代码及时间表.xlsx\" 出错！请检查该文件是否符合模板要求！"
 					CDMF.print_red_text(infoString)
+					myLog(infoString)
 					self.bWithTime = False
 					CDMF.print_red_text("程序中断，请完善相应资料！")
 					quit = input("按任意键退出...")
 					self.Status = False
-					return infoString
-				else:
-					pass
-				finally:
-					pass
+					return
 				Excel.Close()
 			else:
-				CDMF.print_red_text("在 "+self.RootPath+" 没有找到\"地区代码及时间表.xlsx\"或\"地区代码及时间表.xls\",无法完成目录表中时间自动填充!\"")
-
+				infoString="在 "+self.RootPath+" 没有找到\"地区代码及时间表.xlsx\"或\"地区代码及时间表.xls\",无法完成目录表中时间自动填充!\""
+				CDMF.print_red_text(infoString)
 				while True:
 					content = CDMF.print_green_input_text("是否继续? 请输入y/Y或者n/N:")
 					if content=="y" or content=="Y" or content=="n" or content=="N":
 						break
 				if content=="y" or content=="Y":
 					self.bWithTime = False
-					pass
+					myLog(infoString + '  已忽略此项，只在目录中统计页数')
 				else:
 					CDMF.print_red_text("程序中断，请完善相应资料！")
+					myLog(infoString + '  请完善！')
 					quit = input("按任意键退出...")
 					self.Status = False
 					return
@@ -474,17 +466,20 @@ class Job(object):
 						self.nNumNoContent  = self.nNumNoContent + 1
 
 			CDMF.print_blue_text("扫描完毕！共有 "+str(self.nNumFile) + " 户的资料,",end='')
+			myLog("扫描完毕！共有 "+str(self.nNumFile) + " 户的资料,")
 			if self.bRegenerate:
 				self.nTotal = self.nNumFile
 			else:
 				self.nTotal = self.nNumNoContent
 			CDMF.print_blue_text("需要统计的有 "+str(self.nTotal) + " 户.")
+			myLog("需要统计的有 "+str(self.nTotal) + " 户.")
 			if self.nTotal==0:
 				infoString = "没有需要统计的村民."
 				CDMF.print_blue_text(infoString)
 				quit = input("按任意键退出...")
 				self.Status = False
-				return infoString
+				myLog(infoString)
+				return
 			self.Processes = 1
 			while True:
 				content1 = CDMF.print_green_input_text("是否启动加速? 请输入y/Y或者n/N:")
@@ -505,18 +500,24 @@ class Job(object):
 			self.Status = True
 
 	def Run(self):
-		CDMF.print_yellow_text("----------------------------------------------------------------------")
-		CDMF.print_yellow_text(" 序号         户主编号与名字                操作状态         耗时(秒)")
-		CDMF.print_yellow_text("----------------------------------------------------------------------")
 		timeString = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
 		hostName = socket.gethostname()
 		myLog('-----------Log Time: '+timeString+ ' from '+hostName+'  --------------')
+		CDMF.print_yellow_text("----------------------------------------------------------------------")
+		CDMF.print_yellow_text(" 序号         户主编号与名字                操作状态         耗时(秒)")
+		CDMF.print_yellow_text("----------------------------------------------------------------------")
+		myLog("----------------------------------------------------------------------")
+		myLog(" 序号         户主编号与名字                操作状态         耗时(秒)")
+		myLog("----------------------------------------------------------------------")
+
 		#多进程
 		try:
 			multiP = Pool(self.Processes)
 			ProcessOrder = 0
 			for fileOrDir in self.filesOrDirsInRoot:
 				if os.path.isdir(fileOrDir) and fileOrDir.startswith(('1','2','3','4','5','6','7','8','9','0')):
+					if not self.bRegenerate and os.path.exists(self.RootPath + fileOrDir + "\\" +"卷内文件目录.doc"):
+						continue
 					ProcessOrder += 1
 					multiP.apply_async(tasks, args=(fileOrDir,self.RootPath,self.AreaTimeAdict,self.bRegenerate,self.bWithTime,self.CopyFengmian,self.nTotal,ProcessOrder,),callback=myLog)
 			multiP.close()
@@ -526,22 +527,21 @@ class Job(object):
 			infoString = "运行出现错误！"
 			CDMF.print_red_text(infoString)
 			self.Status = False
-			return infoString
-		else:
-			pass
-		finally:
-			pass
+			myLog(infoString)
+			return
 		if self.Status:
 			CDMF.print_yellow_text("----------------------------------------------------------------------")
-
+			myLog("----------------------------------------------------------------------")
 		else:
 			infoString = "运行出现错误！"
 			CDMF.print_red_text()
 			quit = input("按任意键退出...")
 			self.Status = False
-			return infoString
+			myLog(infoString)
+			return
 
 if __name__ == '__main__':
+	freeze_support()
 	rootpath = os.getcwd()
 	Jobb = Job(rootpath)
 	if(Jobb.Status):
@@ -550,4 +550,5 @@ if __name__ == '__main__':
 		finishTime = time.clock()
 		CDMF.print_yellow_text("总耗时："+str(finishTime-startTime)[0:7]+" 秒")
 		CDMF.print_blue_text("任务完成，可查看生成的 “操作结果.txt” 日志.")
+		myLog("总耗时："+str(finishTime-startTime)[0:7]+" 秒")
 		quit = input("按任意键退出...")
