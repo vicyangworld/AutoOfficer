@@ -12,7 +12,7 @@ import time
 import socket
 import multiProcessPackage
 
-CDMF = CmdFormat.CmdFormat("特供赟哥")
+CDMF = CmdFormat.CmdFormat("自动Ofiice v2.1.1 特供赟哥")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def myLog(x):
@@ -358,7 +358,7 @@ class Job(object):
 		CDMF.set_cmd_color(CmdFormat.FOREGROUND_RED | CmdFormat.FOREGROUND_GREEN | \
 			CmdFormat.FOREGROUND_BLUE | CmdFormat.FOREGROUND_INTENSITY)
 		print("\n")
-		print("==========================  特供赟哥软件  ==============================")
+		print("=================== 自动Ofiice v2.1.1 特供赟哥  ========================")
 		print("|                                                                      |")
 		print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 		CDMF.print_red_text("|      (1) *包含每个村民的个人目录                                     |")
