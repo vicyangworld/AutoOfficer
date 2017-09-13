@@ -16,8 +16,23 @@ CDMF = CmdFormat.CmdFormat("特供赟哥")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def myLog(x):
+	if x==None:
+		return
 	with open('操作结果.txt', 'a+') as f:
 		f.write(str(x)+'\n')
+
+def viewLog():
+	failNumber = 0
+	with open('操作结果.txt', 'r') as f:
+		for line in f:
+			if "Log Time" in line:
+				failNumber = 0
+			if bool(re.search(r'\d', line)) and ("X" in line):
+				failNumber +=1
+	return failNumber
+
+
+			#any(char.isdigit() for char in line)
 
 class easyWord(object):
 	"""docstring for ClassName"""
@@ -191,7 +206,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		CDMF.print_red_text(infoString)
 		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
 			os.remove(PersionalDir +"卷内文件目录.doc")
-		myLog(infoString)
+		myLog(infoString + "     X")
 		return
 	# 更新“卷内文件目录.doc”
 	try:
@@ -531,7 +546,10 @@ class Job(object):
 			return
 		if self.Status:
 			CDMF.print_yellow_text("----------------------------------------------------------------------")
+			failNumber = viewLog()
+			CDMF.print_yellow_text("共统计 "+ str(self.nTotal) +" 户，成功 "+str(self.nTotal-failNumber)+" 户，失败 "+str(failNumber)+" 户")
 			myLog("----------------------------------------------------------------------")
+			myLog("共统计 "+ str(self.nTotal) +" 户，成功 "+str(self.nTotal-failNumber)+" 户，失败 "+str(failNumber)+" 户")
 		else:
 			infoString = "运行出现错误！"
 			CDMF.print_red_text()
