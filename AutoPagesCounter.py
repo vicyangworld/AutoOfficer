@@ -63,6 +63,7 @@ class easyExcel(object):
 			#执行到Sheet1.HPageBreaks.Count的时候，它才强制分页了，所以先运行一次
 			# Activesheet.VPageBreaks.Count
 			# Activesheet.HPageBreaks.Count
+			#pages = pages + Activesheet.PageSetup.Pages.Count
 			pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
 			# self.ExcelApp.Volatile
 		return pages

@@ -83,16 +83,12 @@ class easyExcel(object):
 		self.Xls.Close(SaveChanges=0)
 		self.ExcelApp.Quit()
 		del self.ExcelApp
-		#self.ExcelApp.Quit()
 	def PageCount(self):
 		pages = 0
 		for x in range(1,self.Xls.Worksheets.Count+1):
 			Activesheet = self.Xls.Worksheets(x)
-			#执行到Sheet1.HPageBreaks.Count的时候，它才强制分页了，所以先运行一次
-			# Activesheet.VPageBreaks.Count
-			# Activesheet.HPageBreaks.Count
-			pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
-			# self.ExcelApp.Volatile
+			pages = pages + Activesheet.PageSetup.Pages.Count
+			#pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
 		return pages
 	def read_areacode_time(self):
 		AreaTimeAdict = {}
@@ -277,7 +273,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		if bWithTime:
 			Word.SetCell(7,4,(AreaTimeAdict[HuZhuVillageCode])[7])  # "日期"
 		Word.SetCell(7,5,str(nTotalPages)+"-"+str(nTotalPages+PersonNumber))
-		nTotalPages = nTotalPages +PersonNumber
+		nTotalPages = nTotalPages + PersonNumber + 2
 		Pages_adict.clear()
 		Word.Close()
 	except Exception as e:
