@@ -63,8 +63,8 @@ class easyExcel(object):
 			#执行到Sheet1.HPageBreaks.Count的时候，它才强制分页了，所以先运行一次
 			# Activesheet.VPageBreaks.Count
 			# Activesheet.HPageBreaks.Count
-			#pages = pages + Activesheet.PageSetup.Pages.Count
-			pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
+			pages = pages + Activesheet.PageSetup.Pages.Count
+			#pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
 			# self.ExcelApp.Volatile
 		return pages
 	def read_areacode_time(self):
@@ -408,7 +408,7 @@ class Job(object):
 					if self.WithTime:
 						Word.SetCell(7,4,(self.AreaTimeAdict[self.HuZhuVillageCode])[7])  # "日期"
 					Word.SetCell(7,5,str(nTotalPages)+"-"+str(nTotalPages+self.PersonNumber))
-					nTotalPages = nTotalPages +self.PersonNumber
+					nTotalPages = nTotalPages +self.PersonNumber + 2
 					self.adict.clear()
 					Word.Close()
 
