@@ -1,3 +1,9 @@
+# _*_ coding:utf-8 _**
+# Author:vic yang
+# Date: 2017-9
+# AutoOfficer 
+# Version:2.2.0
+
 import win32com
 import CmdFormat
 from win32com.client import Dispatch, constants
@@ -12,30 +18,32 @@ import time
 import socket
 import multiProcessPackage
 
-CDMF = CmdFormat.CmdFormat("自动Ofiice v2.1.1 特供赟哥")
+VERSION = '2.2.0'
+CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION+" 特供赟哥")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def myLog(x):
+	""" recording the status information"""
 	if x==None:
 		return
 	with open('操作结果.txt', 'a+') as f:
 		f.write(str(x)+'\n')
 
-def viewLog():
+def calculate_fails():
+	"""calcualte the fail opreration number"""
 	failNumber = 0
 	with open('操作结果.txt', 'r') as f:
 		for line in f:
+			# regrard "Log Time " as a start flag to calculate fails number
+			# because the log file contains many other opreation history logs
 			if "Log Time" in line:
 				failNumber = 0
-			if bool(re.search(r'\d', line)) and ("X" in line):
+			if bool(re.search(r'\d', line)) and ("X" in line): #"X" is a fail flag
 				failNumber +=1
 	return failNumber
 
-
-			#any(char.isdigit() for char in line)
-
 class easyWord(object):
-	"""docstring for ClassName"""
+	"""A class for opreating word file"""
 	def __init__(self, FileName):
 		self.WordAPP = win32com.client.DispatchEx('Word.Application')
 		self.WordAPP.Visible=False
@@ -67,7 +75,7 @@ class easyWord(object):
 		del self.WordAPP
 
 class easyExcel(object):
-	"""docstring for easyExcel"""
+	"""A class for opreating word file"""
 	def __init__(self, FileName):
 		self.ExcelApp = win32com.client.DispatchEx('Excel.Application')
 		self.ExcelApp.Visible=False
@@ -90,6 +98,7 @@ class easyExcel(object):
 			pages = pages + Activesheet.PageSetup.Pages.Count
 			#pages = pages + (Activesheet.VPageBreaks.Count)*(Activesheet.HPageBreaks.Count)
 		return pages
+	# reading areacode and time from "地区代码及时间表"
 	def read_areacode_time(self):
 		AreaTimeAdict = {}
 		for x in range(1,self.Xls.Worksheets.Count+1):
@@ -354,7 +363,7 @@ class Job(object):
 		CDMF.set_cmd_color(CmdFormat.FOREGROUND_RED | CmdFormat.FOREGROUND_GREEN | \
 			CmdFormat.FOREGROUND_BLUE | CmdFormat.FOREGROUND_INTENSITY)
 		print("\n")
-		print("=================== 自动Ofiice v2.1.1 特供赟哥  ========================")
+		print("=================== 自动Ofiice v"+VERSION+" 特供赟哥  ========================")
 		print("|                                                                      |")
 		print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 		CDMF.print_red_text("|      (1) *包含每个村民的个人目录                                     |")
@@ -542,7 +551,7 @@ class Job(object):
 			return
 		if self.Status:
 			CDMF.print_yellow_text("----------------------------------------------------------------------")
-			failNumber = viewLog()
+			failNumber = calculate_fails()
 			CDMF.print_yellow_text("共统计 "+ str(self.nTotal) +" 户，成功 "+str(self.nTotal-failNumber)+" 户，失败 "+str(failNumber)+" 户")
 			myLog("----------------------------------------------------------------------")
 			myLog("共统计 "+ str(self.nTotal) +" 户，成功 "+str(self.nTotal-failNumber)+" 户，失败 "+str(failNumber)+" 户")
