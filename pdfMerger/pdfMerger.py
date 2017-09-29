@@ -148,7 +148,7 @@ class PDFMerger(object):
                     # tempstr = '_'.join(pdfFiles3[x].split('_')[0:2])
                     # outPdfName = mergerPath+tempstr+'.pdf'
                     outPdfName = mergerPath+pdfFiles3[x]
-                    if os.path.exists(outPdfName) and not bRegenerate:
+                    if os.path.exists(outPdfName) and not self.bRegenerate:
                         continue
                     pdfOutput = open(mergerPath+pdfFiles3[x],'wb') 
                     pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
