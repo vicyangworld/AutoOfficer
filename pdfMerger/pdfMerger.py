@@ -162,3 +162,5 @@ if __name__ == '__main__':
     DIRSNAMEs=['表3','草图PDF','界址点PDF']
     Job = PDFMerger(ROOTPATH,DIRSNAMEs)
     Job.Run()
+    CDMF.print_yellow_text("任务完成！")
+    quit = input("按任意键退出...")
