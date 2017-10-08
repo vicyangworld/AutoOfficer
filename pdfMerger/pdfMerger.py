@@ -146,14 +146,15 @@ class PDFMerger(object):
                     for pageNum in range(pdfReader.numPages):
                         pdfWriter.addPage(pdfReader.getPage(pageNum))    #将打开的pdf文件内容一页一页的复制到新建的空白pdf里    
                     
-                    # tempstr = '_'.join(pdfFiles3[x].split('_')[0:2])
+                    outPdfName = 'CBFDKDCB'+pdfFiles3[x].split('表')[1]
                     # outPdfName = mergerPath+tempstr+'.pdf'
-                    outPdfName = mergerPath+pdfFiles3[x]
+                    # outPdfName = mergerPath+pdfFiles3[x]
                     if os.path.exists(outPdfName) and not self.bRegenerate:
                         continue
-                    pdfOutput = open(mergerPath+pdfFiles3[x],'wb') 
+                    pdfOutput = open(mergerPath+outPdfName,'wb') 
                     pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
                     pdfOutput.close()
+                    outPdfName=""   #清空outPdfName
                 index += 1
                 CDMF.print_blue_text("     成功！")
 
