@@ -9,7 +9,7 @@ import re
 import CmdFormat
 
 CDMF = CmdFormat.CmdFormat("PDF分离及识别器")
-
+RESOLUTION = 150
 tools = pyocr.get_available_tools()[:]
 if len(tools)==0:
 	print("No ocr tool found")
@@ -66,7 +66,7 @@ AllPages = pdfReader.numPages
 bFlag = False
 Code_DK = []
 CountTemp = 1
-RESOLUTION = 200
+
 for pageNum in range(AllPages):
 	if pageNum<AllPages-4:
 		continue
@@ -137,9 +137,13 @@ if "界址点成果表" in txt or "界址点坐标" in txt or "界址点编号" 
 	for digital in digitals:
 		if digital.startswith('140'):
 			if len(digital)==19:
-				Pre_Code_DK = digital[0:15]
+				Code_DK_FULL = digital
 			else:
 				Code_CBF = digital
+if Code_DK_FULL:
+	Pre_Code_DK = Code_DK_FULL[0:15]
+else:
+	Pre_Code_DK = Code_CBF[0:15]
 if  Pre_Code_DK==None or Pre_Code_DK=="":
 	print("界址点成果表所在位置错误！归户表设置最多为4页")
 	sys.exit(1)
