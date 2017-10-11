@@ -20,7 +20,7 @@ tool = tools[0]
 lang  = tool.get_available_languages()[0]  #中文
 
 tempoutPdfName = 'temp.pdf'
-pdfReader = PdfFileReader(open('E:\\PythonProjects\\pdfSpliter\\0033.pdf','rb'))
+pdfReader = PdfFileReader(open('E:\\PythonProjects\\pdfSpliter\\0001.pdf','rb'))
 
 
 def __quiry(mes):
@@ -66,6 +66,7 @@ AllPages = pdfReader.numPages
 bFlag = False
 Code_DK = []
 CountTemp = 1
+RESOLUTION = 200
 for pageNum in range(AllPages):
 	if pageNum<AllPages-4:
 		continue
@@ -76,7 +77,7 @@ for pageNum in range(AllPages):
 	pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
 	pdfOutput.close()
 	print('--->'+'open pdf')
-	image_pdf = Image(filename='./'+tempoutPdfName,resolution=200)
+	image_pdf = Image(filename='./'+tempoutPdfName,resolution=RESOLUTION)
 	print('--->'+'convert pdf to jpeg')
 	image_jpeg = image_pdf.convert('jpeg')
 	img_page = Image(image=image_jpeg)
@@ -117,7 +118,7 @@ pdfOutput = open('./'+tempoutPdfName,'wb')
 pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
 pdfOutput.close()
 print('--->'+'open pdf')
-image_pdf = Image(filename='./'+tempoutPdfName,resolution=200)
+image_pdf = Image(filename='./'+tempoutPdfName,resolution=RESOLUTION)
 print('--->'+'convert pdf to jpeg')
 image_jpeg = image_pdf.convert('jpeg')
 img_page = Image(image=image_jpeg)
@@ -197,7 +198,7 @@ pdfOutput = open('./'+tempoutPdfName,'wb')
 pdfWriter1.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
 pdfOutput.close()
 print('--->'+'open pdf')
-image_pdf = Image(filename='./'+tempoutPdfName,resolution=200)
+image_pdf = Image(filename='./'+tempoutPdfName,resolution=RESOLUTION)
 print('--->'+'convert pdf to jpeg')
 image_jpeg = image_pdf.convert('jpeg')
 img_page = Image(image=image_jpeg)
@@ -228,7 +229,7 @@ while True:
 	pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
 	pdfOutput.close()
 	print('--->'+'open pdf')
-	image_pdf = Image(filename='./'+tempoutPdfName,resolution=150)
+	image_pdf = Image(filename='./'+tempoutPdfName,resolution=RESOLUTION)
 	print('--->'+'convert pdf to jpeg')
 	image_jpeg = image_pdf.convert('jpeg')
 	img_page = Image(image=image_jpeg)
@@ -279,7 +280,7 @@ for pageNum in range(pdfReader.numPages):
 	pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
 	pdfOutput.close()
 	print('--->'+'open pdf')
-	image_pdf = Image(filename='./'+outPdfName,resolution=150)
+	image_pdf = Image(filename='./'+outPdfName,resolution=RESOLUTION)
 	print('--->'+'convert pdf to jpeg')
 	image_jpeg = image_pdf.convert('jpeg')
 	img_page = Image(image=image_jpeg)
