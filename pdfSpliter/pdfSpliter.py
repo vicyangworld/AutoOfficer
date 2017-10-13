@@ -1,5 +1,4 @@
 from wand.image import Image
-from PIL import Image as PI
 import pyocr
 import pyocr.builders
 import io,sys,os,shutil
@@ -9,9 +8,10 @@ import re
 import CmdFormat
 import datetime,time,socket
 from PIL import ImageFilter
+from PIL import Image as PI
 import lisence
 
-CDMF = CmdFormat.CmdFormat("PDF分离及识别器")
+CDMF = CmdFormat.CmdFormat("PDF分离及识别器(试用版)")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def log(x):
@@ -30,16 +30,16 @@ def readlisence():
 				content = f.read()
 				s2 = lisence.decrypt('cxr', content)
 		except Exception as e:
-			CDMF.print_red_text("验证码不正确，请联系管理员：QQ:529301432 手机：18801415145")
+			CDMF.print_red_text("验证码不正确，请联系管理员：QQ:35272212 手机：15934000850")
 			return False
 		if s1.lower() == s2.lower():
 			CDMF.print_blue_text("验证成功,欢迎使用！")
 			return True
 		else:
-			CDMF.print_red_text("验证码不正确,请联系管理员：QQ:529301432 手机：18801415145！")
+			CDMF.print_red_text("验证码不正确,请联系管理员：QQ:35272212 手机：15934000850！")
 			return False
 	else:
-		CDMF.print_red_text("没有许可文件lisence.lis，请联系管理员：QQ:529301432 手机：18801415145")
+		CDMF.print_red_text("没有许可文件lisence.lis，请联系管理员：QQ:35272212 手机：15934000850")
 		return False
 
 
@@ -71,7 +71,7 @@ class PDFspliter(object):
 			CDMF.set_cmd_color(CmdFormat.FOREGROUND_RED | CmdFormat.FOREGROUND_GREEN | \
 				CmdFormat.FOREGROUND_BLUE | CmdFormat.FOREGROUND_INTENSITY)
 			print("\n")
-			print("==========================  欢迎使用  ==================================")
+			print("====================  PDF分离及识别器(试用版)  =========================")
 			print("|                                                                      |")
 			print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 			CDMF.print_red_text("|      (1) *每户PDF文件                                                |")
@@ -79,6 +79,41 @@ class PDFspliter(object):
 			CDMF.print_red_text("|      (3) *注意，扫描质量不同，识别有可能失败 ！                      |")
 			print("|                                                                      |")
 			print("========================================================================")
+	def __getPdfTxtAt(self,pageNum,bENHANCE):
+		# print('---->>>>>'+str(pageNum))
+		RESOLUTION = 200
+		tempoutPdfName = 'temp.pdf'
+		if os.path.exists('./'+tempoutPdfName):
+			os.remove('./'+tempoutPdfName)
+		pdfWriter = PdfFileWriter()     #生成一个空白的pdf文件
+		pdfWriter.addPage(self.pdfReader.getPage(pageNum))
+		with open('./'+tempoutPdfName,'wb') as pdfOutput:
+			pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
+		with Image(filename='./'+tempoutPdfName,resolution=RESOLUTION) as image_pdf:
+			image_jpeg = image_pdf.convert('jpeg')
+		img_page = Image(image=image_jpeg)
+		req_image = img_page.make_blob('jpeg')
+		image_filtered = PI.open(io.BytesIO(req_image))
+		# image_filtered= image_filtered.filter(ImageFilter.GaussianBlur(radius=1))
+		# if bENHANCE:
+		# 	image_filtered= image_filtered.filter(ImageFilter.EDGE_ENHANCE)
+		txt = self.__tool.image_to_string(
+			image_filtered,
+			lang=self.__lang,
+			builder=pyocr.builders.TextBuilder()
+		)
+		if os.path.exists('./'+tempoutPdfName):
+			os.remove('./'+tempoutPdfName)
+		return txt
+
+	def __writeToPdf(self,filename,beg,end):
+		pdfWriter = PdfFileWriter()     #生成一个空白的pdf文件
+		for x in range(beg,end+1):
+			pdfWriter.addPage(self.pdfReader.getPage(x))
+		pdfOutput = open(filename,'wb')
+		pdfWriter.write(pdfOutput)                         #将复制的内容全部写入合并的pdf
+		pdfOutput.close()
+
 	def Run(self):
 		if not readlisence():
 			sys.exit(1)
@@ -100,10 +135,10 @@ class PDFspliter(object):
 			if bRegenerate:
 				try:
 					shutil.rmtree(self.resPath)
-					self.__mkdir(self.resPath)
 				except Exception as e:
 					print("删除旧文件失败，请查看合并文件是否被占用！")
 					sys.exit(1)
+				self.__mkdir(self.resPath)
 		allPdfFiles = os.listdir(self.__RootPath)
 		CDMF.print_blue_text('正在扫描...','')
 		count = 0
@@ -125,48 +160,12 @@ class PDFspliter(object):
 				bFlag = False
 				Code_DK = []
 				CountTemp = 1
-				def getPdfTxtAt(pageNum,bENHANCE):
-					# print('---->>>>>'+str(pageNum))
-					RESOLUTION = 200
-					tempoutPdfName = 'temp.pdf'
-					pdfWriter = PdfFileWriter()     #生成一个空白的pdf文件
-					pdfWriter.addPage(self.pdfReader.getPage(pageNum))
-					pdfOutput = open('./'+tempoutPdfName,'wb')
-					pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
-					pdfOutput.close()
-					# print('--->'+'open pdf')
-					with Image(filename='./'+tempoutPdfName,resolution=RESOLUTION) as image_pdf:
-					# print('--->'+'convert pdf to jpeg')
-						image_jpeg = image_pdf.convert('jpeg')
-					img_page = Image(image=image_jpeg)
-					req_image = img_page.make_blob('jpeg')
-
-					# print('--->'+'recognite')
-					image_filtered = PI.open(io.BytesIO(req_image))
-					# image_filtered= image_filtered.filter(ImageFilter.GaussianBlur(radius=1))
-					# if bENHANCE:
-					# 	image_filtered= image_filtered.filter(ImageFilter.EDGE_ENHANCE)
-					txt = self.__tool.image_to_string(
-						image_filtered,
-						lang=self.__lang,
-						builder=pyocr.builders.TextBuilder()
-					)
-					os.remove('./'+tempoutPdfName)
-					return txt
-
-				def writeToPdf(filename,beg,end):
-					pdfWriter = PdfFileWriter()     #生成一个空白的pdf文件
-					for x in range(beg,end+1):
-						pdfWriter.addPage(self.pdfReader.getPage(x))
-					pdfOutput = open(filename,'wb')
-					pdfWriter.write(pdfOutput)                         #将复制的内容全部写入合并的pdf
-					pdfOutput.close()
 				TotalDK = 0
 				for pageNum in range(AllPages):
 					if pageNum<AllPages-4:
 						continue
 					digitals=""
-					txt = getPdfTxtAt(pageNum,True)
+					txt = self.__getPdfTxtAt(pageNum,True)
 					# print(txt)
 					if "农村土地" in txt or "归户表" in txt or "表6" in txt:
 						CountTemp = 1
@@ -175,7 +174,6 @@ class PDFspliter(object):
 						continue
 					if bFlag:
 						digitals = re.findall(r'\d+', txt)
-						# print('DDDDD  ','')
 						# print(digitals)
 						if len(digitals[0])<3:
 							TotalDK += int(digitals[0])
@@ -185,6 +183,7 @@ class PDFspliter(object):
 									Code_DK.append(digital)
 						# print(Code_DK)
 						CountTemp += 1
+
 				if len(Code_DK)==0:
 					print("归户表格式错误！归户表设置最多为4页")
 				if TotalDK != len(Code_DK):
@@ -192,7 +191,8 @@ class PDFspliter(object):
 					log("失败：有地块代码未识别失败："+file+"  成功识别："+ "/".join(Code_DK))
 					print(TotalDK)
 					print(Code_DK)
-				txt = getPdfTxtAt(AllPages-2*CountTemp-1,False)
+				# # 从界址点成果表中读取地块代码以及承包方代码
+				txt = self.__getPdfTxtAt(AllPages-2*CountTemp-1,False)
 				# print(txt)
 				Pre_Code_DK=""
 				Code_DK_FULL=""
@@ -225,45 +225,45 @@ class PDFspliter(object):
 					log("失败：承包方代码识别失败："+file)
 					continue
 				print('      地块代码以及承包方代码识别成功')
-				print('编码 '+str(Pre_Code_DK)+' '+str(Code_DK)+' '+str(Code_CBF))
+				# print('编码 '+str(Pre_Code_DK)+' '+str(Code_DK)+' '+str(Code_CBF))
 
 				#-------  分解PDF--------------
 				#（1）承包方调查表（表2）
-				writeToPdf(self.resPath+"CBFDCB"+Code_CBF+".pdf",0,0)
+				self.__writeToPdf(self.resPath+"CBFDCB"+Code_CBF+".pdf",0,0)
 				print('      成功生成承包方调查表（表2）')
 				#(2)分离归户表(表6)
-				writeToPdf(self.resPath+"CBJYQGH"+Code_CBF+".pdf",AllPages-CountTemp,AllPages-1)
+				self.__writeToPdf(self.resPath+"CBJYQGH"+Code_CBF+".pdf",AllPages-CountTemp,AllPages-1)
 				print('      成功生成归户表(表6)')
 				#(3)分离核实表 (表4)
-				writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp,AllPages-CountTemp-1)
+				self.__writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp,AllPages-CountTemp-1)
 				print('      成功生成核实表 (表4)')
 				#(4) 地块调查表
 				for ii in range(0,len(Code_DK)):
 					temp= AllPages-2*CountTemp-3*len(Code_DK) + ii*3
-					writeToPdf(self.resPath+"CBFDKDCB"+Pre_Code_DK+Code_DK[ii]+".pdf",temp,temp+2)
+					self.__writeToPdf(self.resPath+"CBFDKDCB"+Pre_Code_DK+Code_DK[ii]+".pdf",temp,temp+2)
 				print('      成功生成地块调查表')
 				#---------------------------------------------
 				#(5) 承包方代表身份证及证明
 				#检查是否有证明，在第3页
 				pageNum = 2  #第三页，从0开始计算
-				txt = getPdfTxtAt(pageNum,False)
+				txt = self.__getPdfTxtAt(pageNum,False)
 				# print(txt)
 				bZM=False
-				if "证明" in txt or "兹证明" in txt or "情况属实" in txt:
+				if "证明" in txt or "兹证明" in txt or "兹证" in txt or "情况属实" in txt:
 					bZM = True
 				if bZM:
-					writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,2)
+					self.__writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,2)
 				else:
-					writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,1)
+					self.__writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,1)
 				print('      成功生成承包方身份证明')
 				#（6）合同
 				CurrentPage = AllPages-2*CountTemp-3*len(Code_DK)-1
 				while True:
-					txt = getPdfTxtAt(CurrentPage,True)
+					txt = self.__getPdfTxtAt(CurrentPage,True)
 					if "一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt:
 						break;
 					CurrentPage = CurrentPage - 1
-				writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage,CurrentPage+1)
+				self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage,CurrentPage+1)
 				print('      成功生成合同')
 
 				#(7)家庭成员
@@ -271,7 +271,7 @@ class PDFspliter(object):
 					JTCY_beg = 3
 				else:
 					JTCY_beg = 2
-				writeToPdf(self.resPath+"CBFJTCY"+Code_CBF+".pdf",JTCY_beg,CurrentPage)
+				self.__writeToPdf(self.resPath+"CBFJTCY"+Code_CBF+".pdf",JTCY_beg,CurrentPage)
 				print('      成功生成家庭成员')
 				endtime1 = datetime.datetime.now()
 				CDMF.print_blue_text('      用时 '+str(endtime1 - starttime1))
