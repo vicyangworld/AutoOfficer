@@ -22,19 +22,19 @@ def decrypt(key,content): # key:密钥,content:密文
 
 def get_mac_address(): 
     mac=uuid.UUID(int = uuid.getnode()).hex[-12:] 
-    return ":".join([mac[e:e+2] for e in range(0,11,2)])
+    return "-".join([mac[e:e+2] for e in range(0,11,2)])
 
-def generate_lisence(s):
+def generate_lisence(key,s):
     with open('./lisence.lis', 'w') as f:
-        f.write(s)
+        f.write(encrypt(key,s))
 
 if __name__ == '__main__':
-    # s1 = encrypt('cxr', '1C:C1:DE:34:E1:1E')
+    # s1 = encrypt('cxr', '1C-C1-DE-34-E1-1E')
     # s2 = decrypt('cxr', s1)
     # print(s1)
     # print(s2)
     mac_address = input('请输入机器物理地址：')
-    generate_lisence(mac_address)
+    generate_lisence('cxr',mac_address)
 
 
 
