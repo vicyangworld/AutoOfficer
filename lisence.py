@@ -1,5 +1,8 @@
 import win32com.client
 import uuid
+import CmdFormat
+CDMF = CmdFormat.CmdFormat("PDF分离及识别器(试用版) 注册机")
+
 def encrypt(key,content): # key:密钥,content:明文
     EncryptedData = win32com.client.Dispatch('CAPICOM.EncryptedData')
     EncryptedData.Algorithm.KeyLength = 5
@@ -26,11 +29,12 @@ def generate_lisence(s):
         f.write(s)
 
 if __name__ == '__main__':
-    s1 = encrypt('cxr', '1C:C1:DE:34:E1:1E')
-    s2 = decrypt('cxr', s1)
-    print(s1)
-    print(s2)
-    generate_lisence(s1)
+    # s1 = encrypt('cxr', '1C:C1:DE:34:E1:1E')
+    # s2 = decrypt('cxr', s1)
+    # print(s1)
+    # print(s2)
+    mac_address = input('请输入机器物理地址：')
+    generate_lisence(mac_address)
 
 
 
