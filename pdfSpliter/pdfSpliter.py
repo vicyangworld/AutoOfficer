@@ -11,7 +11,8 @@ from PIL import ImageFilter
 from PIL import Image as PI
 import lisence
 
-CDMF = CmdFormat.CmdFormat("PDF分离及识别器(试用版)")
+VERSION = 'V1.0'
+CDMF = CmdFormat.CmdFormat("PDF分离及识别器"+VERSION+"(试用版)")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def log(x):
@@ -22,7 +23,8 @@ def log(x):
 		f.write(str(x)+'\n')
 
 def readlisence():
-	CDMF.print_blue_text('验证许可证')
+	CDMF.print_blue_text('验证许可证....')
+	time.sleep(2)
 	s1 = lisence.get_mac_address()
 	if os.path.exists('lisence.lis'):
 		try:
@@ -71,7 +73,7 @@ class PDFspliter(object):
 			CDMF.set_cmd_color(CmdFormat.FOREGROUND_RED | CmdFormat.FOREGROUND_GREEN | \
 				CmdFormat.FOREGROUND_BLUE | CmdFormat.FOREGROUND_INTENSITY)
 			print("\n")
-			print("====================  PDF分离及识别器(试用版)  =========================")
+			print("====================  PDF分离及识别器"+VERSION+"(试用版)  =========================")
 			print("|                                                                      |")
 			print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 			CDMF.print_red_text("|      (1) *每户PDF文件                                                |")
@@ -116,6 +118,7 @@ class PDFspliter(object):
 
 	def Run(self):
 		if not readlisence():
+			quit = input("按任意键退出...")
 			sys.exit(1)
 		timeString = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
 		hostName = socket.gethostname()
@@ -125,8 +128,8 @@ class PDFspliter(object):
 		if len(tools)==0:
 			print("No ocr tool found")
 			sys.exit(1)
-		# else:
-		# 	print("Using '%s' " % (tools[0].get_name()))
+		else:
+			print("Using '%s' " % (tools[0].get_name()))
 		self.__tool = tools[0]
 		self.__lang  = self.__tool.get_available_languages()[0]  #中文
 
@@ -277,8 +280,37 @@ class PDFspliter(object):
 				CDMF.print_blue_text('      用时 '+str(endtime1 - starttime1))
 
 if __name__ == '__main__':
-	starttime = datetime.datetime.now()
 	ROOTPATH = os.getcwd()
+	CDMF.print_yellow_text("正在检测必要组件......")
+	time.sleep(1)
+	dirs = os.listdir(r'C:\\Program Files (x86)\\')
+	bImage = False
+	bTesseract = False
+	for x in dirs:
+		if 'ImageMagick' in x:
+			print(x+'\r',end='')
+			time.sleep(2)
+			print(x+'  已经安装!')
+			bImage = True
+		if 'Tesseract' in x:
+			print(x+'\r',end='')
+			time.sleep(2)
+			print(x+'  已经安装!')
+			bTesseract = True
+	if not bImage:
+		if not os.path.exists('./install_imagemagick.bat'):
+			CDMF.print_red_text("当前目录不存 install_imagemagick.bat，请联系软件提供者. ")
+			quit = input("按任意键退出...")
+			sys.exit(1)
+		os.system(ROOTPATH+'\\'+'install_imagemagick.bat')#安装必要的两个软件
+	if not bTesseract:
+		if not os.path.exists('./install_tesseract.bat'):
+			CDMF.print_red_text("当前目录不存 install_tesseract.bat，请联系软件提供者. ")
+			quit = input("按任意键退出...")
+			sys.exit(1)
+		os.system(ROOTPATH+'\\'+'install_tesseract.bat')#安装必要的两个软件
+
+	starttime = datetime.datetime.now()
 	Job = PDFspliter(ROOTPATH)
 	Job.Run()
 	CDMF.print_yellow_text("任务完成！")
