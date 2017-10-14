@@ -11,7 +11,7 @@ from PIL import ImageFilter
 from PIL import Image as PI
 import lisence
 
-VERSION = 'V1.0'
+VERSION = 'V1.1'
 CDMF = CmdFormat.CmdFormat("PDF分离及识别器"+VERSION+"(试用版)")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
@@ -38,18 +38,17 @@ def readlisence():
 			CDMF.print_blue_text("验证成功,欢迎使用！")
 			return True
 		else:
-			CDMF.print_red_text("验证码不正确,请联系管理员：QQ:35272212 手机：15934000850！")
+			CDMF.print_red_text("验证失败,请联系管理员：QQ:35272212 手机：15934000850！")
 			return False
 	else:
 		CDMF.print_red_text("没有许可文件lisence.lis，请联系管理员：QQ:35272212 手机：15934000850")
 		return False
 
-
 class PDFspliter(object):
 	"""docstring for ClassName"""
 	def __init__(self, ROOTPATH):
 		self.__RootPath = ROOTPATH;
-		self.resPath = ROOTPATH+'/其他资料/承包方/'
+		self.resPath = '其他资料/承包方/'
 	def __quiry(self,mes):
 		global CDMF
 		while True:
@@ -85,13 +84,14 @@ class PDFspliter(object):
 		# print('---->>>>>'+str(pageNum))
 		RESOLUTION = 200
 		tempoutPdfName = 'temp.pdf'
-		if os.path.exists('./'+tempoutPdfName):
-			os.remove('./'+tempoutPdfName)
+		tempoutPdfNameWithAbsPath = os.path.join(self.__RootPath,tempoutPdfName)
+		if os.path.exists(tempoutPdfNameWithAbsPath):
+			os.remove(tempoutPdfNameWithAbsPath)
 		pdfWriter = PdfFileWriter()     #生成一个空白的pdf文件
 		pdfWriter.addPage(self.pdfReader.getPage(pageNum))
-		with open('./'+tempoutPdfName,'wb') as pdfOutput:
+		with open(tempoutPdfNameWithAbsPath,'wb') as pdfOutput:
 			pdfWriter.write(pdfOutput)                           #将复制的内容全部写入合并的pdf
-		with Image(filename='./'+tempoutPdfName,resolution=RESOLUTION) as image_pdf:
+		with Image(filename=tempoutPdfNameWithAbsPath,resolution=RESOLUTION) as image_pdf:
 			image_jpeg = image_pdf.convert('jpeg')
 		img_page = Image(image=image_jpeg)
 		req_image = img_page.make_blob('jpeg')
@@ -104,17 +104,16 @@ class PDFspliter(object):
 			lang=self.__lang,
 			builder=pyocr.builders.TextBuilder()
 		)
-		if os.path.exists('./'+tempoutPdfName):
-			os.remove('./'+tempoutPdfName)
+		if os.path.exists(tempoutPdfNameWithAbsPath):
+			os.remove(tempoutPdfNameWithAbsPath)
 		return txt
 
 	def __writeToPdf(self,filename,beg,end):
 		pdfWriter = PdfFileWriter()     #生成一个空白的pdf文件
 		for x in range(beg,end+1):
 			pdfWriter.addPage(self.pdfReader.getPage(x))
-		pdfOutput = open(filename,'wb')
-		pdfWriter.write(pdfOutput)                         #将复制的内容全部写入合并的pdf
-		pdfOutput.close()
+		with open(filename,'wb') as pdfOutput:              #将复制的内容全部写入合并的pdf
+			pdfWriter.write(pdfOutput)
 
 	def Run(self):
 		if not readlisence():
@@ -124,6 +123,21 @@ class PDFspliter(object):
 		hostName = socket.gethostname()
 		log('-----------Log Time: '+timeString+ ' from '+hostName+'  --------------')
 		self.__messages()
+		#输入待处理文件绝对路径
+		self.__PathOfInputFiles = CDMF.print_green_input_text('请输入待处理文件绝对路径:')
+		while True:
+			if self.__PathOfInputFiles=="":
+				self.__PathOfInputFiles = CDMF.print_green_input_text('请输入待处理文件绝对路径:')
+			else:
+				if not os.path.exists(self.__PathOfInputFiles):
+					CDMF.print_red_text("路径不存在: "+ self.__PathOfInputFiles)
+					self.__PathOfInputFiles = CDMF.print_green_input_text('请重新输入待处理文件绝对路径:')
+				else:
+					break
+
+		if not self.__PathOfInputFiles.endswith('\\'):
+			self.__PathOfInputFiles += "\\"
+
 		tools = pyocr.get_available_tools()[:]
 		if len(tools)==0:
 			print("No ocr tool found")
@@ -131,8 +145,13 @@ class PDFspliter(object):
 		else:
 			print("Using '%s' " % (tools[0].get_name()))
 		self.__tool = tools[0]
-		self.__lang  = self.__tool.get_available_languages()[0]  #中文
+		templist = self.__tool.get_available_languages()
 
+		for x in templist:
+			if 'chi' in x:
+				self.__lang  = x #self.__tool.get_available_languages()[0]  #中文
+
+		self.resPath = os.path.join(self.__PathOfInputFiles,self.resPath)
 		if not self.__mkdir(self.resPath) and len(os.listdir(self.resPath))!=0:
 			bRegenerate = self.__quiry("是否需要重新生成？ 请输入y/Y或者n/N: ")
 			if bRegenerate:
@@ -142,7 +161,7 @@ class PDFspliter(object):
 					print("删除旧文件失败，请查看合并文件是否被占用！")
 					sys.exit(1)
 				self.__mkdir(self.resPath)
-		allPdfFiles = os.listdir(self.__RootPath)
+		allPdfFiles = os.listdir(self.__PathOfInputFiles)
 		CDMF.print_blue_text('正在扫描...','')
 		count = 0
 		for file in allPdfFiles:
@@ -157,7 +176,7 @@ class PDFspliter(object):
 				index +=1
 				print('正在处理 '+str(index)+"/"+str(count))
 				starttime1 = datetime.datetime.now()
-				self.pdfReader = PdfFileReader(open(self.__RootPath+'\\'+file,'rb'))
+				self.pdfReader = PdfFileReader(open(self.__PathOfInputFiles+'\\'+file,'rb'))
 				# 获取承包方代码以及地块代码（部分）
 				AllPages = self.pdfReader.numPages
 				bFlag = False
@@ -169,7 +188,7 @@ class PDFspliter(object):
 						continue
 					digitals=""
 					txt = self.__getPdfTxtAt(pageNum,True)
-					# print(txt)
+					#print(txt)
 					if "农村土地" in txt or "归户表" in txt or "表6" in txt:
 						CountTemp = 1
 						Code_DK = []
@@ -178,12 +197,15 @@ class PDFspliter(object):
 					if bFlag:
 						digitals = re.findall(r'\d+', txt)
 						# print(digitals)
-						if len(digitals[0])<3:
-							TotalDK += int(digitals[0])
-						for digital in digitals:
-							if digital.startswith(('0','1','2','3','4','5','6','7','8','9')):
-								if len(digital)==5:
-									Code_DK.append(digital)
+						try:
+							if len(digitals[0])<3:
+								TotalDK += int(digitals[0])
+							for digital in digitals:
+								if digital.startswith(('0','1','2','3','4','5','6','7','8','9')):
+									if len(digital)==5:
+										Code_DK.append(digital)
+						except Exception as e:
+							TotalDK = len(Code_DK)+1
 						# print(Code_DK)
 						CountTemp += 1
 
@@ -192,8 +214,8 @@ class PDFspliter(object):
 				if TotalDK != len(Code_DK):
 					CDMF.print_red_text("有地块代码未识别成功！！")
 					log("失败：有地块代码未识别失败："+file+"  成功识别："+ "/".join(Code_DK))
-					print(TotalDK)
-					print(Code_DK)
+					# print(TotalDK)
+					# print(Code_DK)
 				# # 从界址点成果表中读取地块代码以及承包方代码
 				txt = self.__getPdfTxtAt(AllPages-2*CountTemp-1,False)
 				# print(txt)
@@ -289,13 +311,13 @@ if __name__ == '__main__':
 	for x in dirs:
 		if 'ImageMagick' in x:
 			print(x+'\r',end='')
-			time.sleep(2)
+			time.sleep(1)
 			print(x+'  已经安装!')
 			bImage = True
-		if 'Tesseract' in x:
-			print(x+'\r',end='')
-			time.sleep(2)
-			print(x+'  已经安装!')
+		# if 'Tesseract' in x:
+		# 	print(x+'\r',end='')
+		# 	time.sleep(2)
+		# 	print(x+'  已经安装!')
 			bTesseract = True
 	if not bImage:
 		if not os.path.exists('./install_imagemagick.bat'):
@@ -303,12 +325,12 @@ if __name__ == '__main__':
 			quit = input("按任意键退出...")
 			sys.exit(1)
 		os.system(ROOTPATH+'\\'+'install_imagemagick.bat')#安装必要的两个软件
-	if not bTesseract:
-		if not os.path.exists('./install_tesseract.bat'):
-			CDMF.print_red_text("当前目录不存 install_tesseract.bat，请联系软件提供者. ")
-			quit = input("按任意键退出...")
-			sys.exit(1)
-		os.system(ROOTPATH+'\\'+'install_tesseract.bat')#安装必要的两个软件
+	# if not bTesseract:
+	# 	if not os.path.exists('./install_tesseract.bat'):
+	# 		CDMF.print_red_text("当前目录不存 install_tesseract.bat，请联系软件提供者. ")
+	# 		quit = input("按任意键退出...")
+	# 		sys.exit(1)
+	# 	os.system(ROOTPATH+'\\'+'install_tesseract.bat')#安装必要的两个软件
 
 	starttime = datetime.datetime.now()
 	Job = PDFspliter(ROOTPATH)
