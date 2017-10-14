@@ -89,10 +89,15 @@ if __name__ == '__main__':
     # print(s1)
     # print(s2)
     key = 'cxr'
-    mac_address = input('请输入机器物理地址：')
+    mac_address = input('请输入机器物理地址：').strip()
     generate_lisence(encrypt(key,mac_address))
 
 
+
+# MGEGCSsGAQQBgjdYA6BUMFIGCisGAQQBgjdYAwGgRDBCAgMCAAECAmYBAgFABAgq
+# GpllWj9cswQQh/fnBUZ6ijwKDTH9DLZmBgQYmfaZ3VFyS/lq391oDtjlcRFGnXpx
+# lG7o
+# hello world
 
 # MGEGCSsGAQQBgjdYA6BUMFIGCisGAQQBgjdYAwGgRDBCAgMCAAECAmYBAgFABAgq
 # GpllWj9cswQQh/fnBUZ6ijwKDTH9DLZmBgQYmfaZ3VFyS/lq391oDtjlcRFGnXpx
