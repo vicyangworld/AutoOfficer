@@ -217,24 +217,32 @@ class PDFspliter(object):
 					# print(TotalDK)
 					# print(Code_DK)
 				# # 从界址点成果表中读取地块代码以及承包方代码
-				txt = self.__getPdfTxtAt(AllPages-2*CountTemp-1,False)
-				# print(txt)
+				CurrentPage = AllPages-2*CountTemp-1
 				Pre_Code_DK=""
-				Code_DK_FULL=""
-				Code_CBF = ""
-				if "界址点成果表" in txt or "界址点坐标" in txt or "界址点编号" in txt:
+				LoopNum = 0
+				while True:
+					LoopNum += 1
+					txt = self.__getPdfTxtAt(AllPages-2*CountTemp-1,False)
 					# print(txt)
-					digitals = re.findall(r'\d+', txt)
-					# print(digitals)
-					# Code_DK_FULL = digitals[0]
-					# Code_CBF = digitals[1]
-					# print(digitals)
-					for digital in digitals:
-						if digital.startswith('1'):
-							if len(digital)==19:
-								Code_DK_FULL = digital
-							elif len(digital)==18:
-								Code_CBF = digital
+					Code_DK_FULL=""
+					Code_CBF = ""
+					if "界址点成果表" in txt or "界址点坐标" in txt or "界址点编号" in txt:
+						# print(txt)
+						digitals = re.findall(r'\d+', txt)
+						# print(digitals)
+						# Code_DK_FULL = digitals[0]
+						# Code_CBF = digitals[1]
+						# print(digitals)
+						for digital in digitals:
+							if digital.startswith('1'):
+								if len(digital)==19:
+									Code_DK_FULL = digital
+								elif len(digital)==18:
+									Code_CBF = digital
+						break
+					CurrentPage += 1
+					if LoopNum==2:
+						break
 				if Code_DK_FULL=="" and Code_CBF=="":
 					CDMF.print_red_text(file+" 中界址点成果表地块代码与承包方代码均未正常识别,将跳过此次处理")
 					log("失败：界址点成果表地块代码与承包方代码均未正常识别："+file)
@@ -260,11 +268,15 @@ class PDFspliter(object):
 				self.__writeToPdf(self.resPath+"CBJYQGH"+Code_CBF+".pdf",AllPages-CountTemp,AllPages-1)
 				print('      成功生成归户表(表6)')
 				#(3)分离核实表 (表4)
-				self.__writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp,AllPages-CountTemp-1)
-				print('      成功生成核实表 (表4)')
+				if LoopNum==1:
+					self.__writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp,AllPages-CountTemp-1)
+					print('      成功生成核实表 (表4)')
+				else:
+					self.__writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp+1,AllPages-CountTemp-1)
+					print('      成功生成核实表 (表4)')			
 				#(4) 地块调查表
 				for ii in range(0,len(Code_DK)):
-					temp= AllPages-2*CountTemp-3*len(Code_DK) + ii*3
+					temp= AllPages-2*CountTemp+(LoopNum-1)-3*len(Code_DK) + ii*3
 					self.__writeToPdf(self.resPath+"CBFDKDCB"+Pre_Code_DK+Code_DK[ii]+".pdf",temp,temp+2)
 				print('      成功生成地块调查表')
 				#---------------------------------------------
@@ -274,24 +286,46 @@ class PDFspliter(object):
 				txt = self.__getPdfTxtAt(pageNum,False)
 				# print(txt)
 				bZM=False
-				if "证明" in txt or "兹证明" in txt or "兹证" in txt or "情况属实" in txt:
+				if "证明" in txt or "兹证明" in txt or "兹证" in txt or "情况属实" in txt or "承诺":
 					bZM = True
+				if "常住" in txt or "登记" in txt:
+					bZM = True
+				if "签发" in txt or "机关" in txt or "身份" in txt or "姓名" in txt or "地址" in txt:
+					bZM = False
 				if bZM:
 					self.__writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,2)
 				else:
 					self.__writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,1)
 				print('      成功生成承包方身份证明')
 				#（6）合同
-				CurrentPage = AllPages-2*CountTemp-3*len(Code_DK)-1
+				CurrentPage = AllPages-2*CountTemp-3*len(Code_DK)-1+(LoopNum-1)
+				LoopNumtemp = 0
+				offset = 0
 				while True:
+					LoopNumtemp += 1
 					txt = self.__getPdfTxtAt(CurrentPage,True)
-					if "一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt:
+					if "指导书" in txt:
+						self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage-2,CurrentPage-1)
+						print('      成功生成合同')
+						offset = 3
+						break
+					if ("一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt or "合同" in txt 
+						or "一" in txt or "二" in txt or "三" in txt or "四" in txt or "五" in txt or "六" in txt or "七" in txt
+						or "拍卖" in txt):
+						if LoopNumtemp<=2:
+							self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage-1,CurrentPage)  #没有指导书的情况或者没有识别
+							print('      成功生成合同')
+							offset = 2
+						elif LoopNumtemp==3:
+							self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage,CurrentPage+1)  #没有指导书的情况或者没有识别
+							print('      成功生成合同')
+							offset = 1
 						break;
 					CurrentPage = CurrentPage - 1
-				self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage,CurrentPage+1)
-				print('      成功生成合同')
-
+					if LoopNumtemp>3:
+						break
 				#(7)家庭成员
+				CurrentPage = AllPages-2*CountTemp-3*len(Code_DK)-1+(LoopNum-1)-offset
 				if bZM:
 					JTCY_beg = 3
 				else:
