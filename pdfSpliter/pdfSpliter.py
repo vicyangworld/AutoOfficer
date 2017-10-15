@@ -158,7 +158,8 @@ class PDFspliter(object):
 				try:
 					shutil.rmtree(self.resPath)
 				except Exception as e:
-					print("删除旧文件失败，请查看合并文件是否被占用！")
+					print("删除旧文件失败，请查看合并文件是否被占用并解除占用！")
+					quit = input("按任意键退出并重新启动...")
 					sys.exit(1)
 				self.__mkdir(self.resPath)
 		allPdfFiles = os.listdir(self.__PathOfInputFiles)
@@ -222,7 +223,7 @@ class PDFspliter(object):
 				LoopNum = 0
 				while True:
 					LoopNum += 1
-					txt = self.__getPdfTxtAt(AllPages-2*CountTemp-1,False)
+					txt = self.__getPdfTxtAt(CurrentPage,False)
 					# print(txt)
 					Code_DK_FULL=""
 					Code_CBF = ""
@@ -263,22 +264,26 @@ class PDFspliter(object):
 				#-------  分解PDF--------------
 				#（1）承包方调查表（表2）
 				self.__writeToPdf(self.resPath+"CBFDCB"+Code_CBF+".pdf",0,0)
-				print('      成功生成承包方调查表（表2）')
+				print('      成功生成承包方调查表（表2）'+' page: 1-1')
 				#(2)分离归户表(表6)
 				self.__writeToPdf(self.resPath+"CBJYQGH"+Code_CBF+".pdf",AllPages-CountTemp,AllPages-1)
-				print('      成功生成归户表(表6)')
+				print('      成功生成归户表(表6)'+' page: '+str(AllPages-CountTemp+1)+'-'+str(AllPages))
 				#(3)分离核实表 (表4)
 				if LoopNum==1:
 					self.__writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp,AllPages-CountTemp-1)
-					print('      成功生成核实表 (表4)')
+					print('      成功生成核实表 (表4)'+' page: '+str(AllPages-2*CountTemp+1)+'-'+str(AllPages-CountTemp))
 				else:
 					self.__writeToPdf(self.resPath+"CBJYQDCHS"+Code_CBF+".pdf",AllPages-2*CountTemp+1,AllPages-CountTemp-1)
-					print('      成功生成核实表 (表4)')			
+					print('      成功生成核实表 (表4)'+' page: '+str(AllPages-2*CountTemp+1+1)+'-'+str(AllPages-CountTemp))			
 				#(4) 地块调查表
 				for ii in range(0,len(Code_DK)):
 					temp= AllPages-2*CountTemp+(LoopNum-1)-3*len(Code_DK) + ii*3
+					if ii==0:
+						p_beg = temp+1
+					if ii==len(Code_DK)-1:
+						p_end = temp+3
 					self.__writeToPdf(self.resPath+"CBFDKDCB"+Pre_Code_DK+Code_DK[ii]+".pdf",temp,temp+2)
-				print('      成功生成地块调查表')
+				print('      成功生成地块调查表'+' page: '+str(p_beg+1)+'-'+str(p_end+3))
 				#---------------------------------------------
 				#(5) 承包方代表身份证及证明
 				#检查是否有证明，在第3页
@@ -294,19 +299,20 @@ class PDFspliter(object):
 					bZM = False
 				if bZM:
 					self.__writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,2)
+					print('      成功生成承包方身份证明'+' page: 2-3')
 				else:
 					self.__writeToPdf(self.resPath+"CBFMC"+Code_CBF+".pdf",1,1)
-				print('      成功生成承包方身份证明')
+					print('      成功生成承包方身份证明'+' page: 2-2')
 				#（6）合同
-				CurrentPage = AllPages-2*CountTemp-3*len(Code_DK)-1+(LoopNum-1)
+				CurrentPage = AllPages-2*CountTemp-3*len(Code_DK)-1+(LoopNum-1)-1
 				LoopNumtemp = 0
 				offset = 0
 				while True:
 					LoopNumtemp += 1
 					txt = self.__getPdfTxtAt(CurrentPage,True)
-					if "指导书" in txt:
+					if "通知书" in txt or "指界" in txt or "领导小组" in txt:
 						self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage-2,CurrentPage-1)
-						print('      成功生成合同')
+						print('      成功生成合同'+' page: '+str(CurrentPage-1)+'-'+str(CurrentPage))
 						offset = 3
 						break
 					if ("一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt or "合同" in txt 
@@ -314,11 +320,11 @@ class PDFspliter(object):
 						or "拍卖" in txt):
 						if LoopNumtemp<=2:
 							self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage-1,CurrentPage)  #没有指导书的情况或者没有识别
-							print('      成功生成合同')
+							print('      成功生成合同'+' page: '+str(CurrentPage)+'-'+str(CurrentPage+1))
 							offset = 2
 						elif LoopNumtemp==3:
 							self.__writeToPdf(self.resPath+"HT"+Code_CBF+".pdf",CurrentPage,CurrentPage+1)  #没有指导书的情况或者没有识别
-							print('      成功生成合同')
+							print('      成功生成合同'+' page: '+str(CurrentPage+1)+'-'+str(CurrentPage+2))
 							offset = 1
 						break;
 					CurrentPage = CurrentPage - 1
@@ -331,41 +337,54 @@ class PDFspliter(object):
 				else:
 					JTCY_beg = 2
 				self.__writeToPdf(self.resPath+"CBFJTCY"+Code_CBF+".pdf",JTCY_beg,CurrentPage)
-				print('      成功生成家庭成员')
+				print('      成功生成家庭成员'+' page: '+str(JTCY_beg+1)+'-'+str(CurrentPage+1))
 				endtime1 = datetime.datetime.now()
 				CDMF.print_blue_text('      用时 '+str(endtime1 - starttime1))
 
 if __name__ == '__main__':
 	ROOTPATH = os.getcwd()
+	CDMF.print_blue_text("当前工作目录："+ROOTPATH)
 	CDMF.print_yellow_text("正在检测必要组件......")
 	time.sleep(1)
 	dirs = os.listdir(r'C:\\Program Files (x86)\\')
 	bImage = False
 	bTesseract = False
+	bGs = False
 	for x in dirs:
 		if 'ImageMagick' in x:
 			print(x+'\r',end='')
 			time.sleep(1)
 			print(x+'  已经安装!')
 			bImage = True
-		# if 'Tesseract' in x:
-		# 	print(x+'\r',end='')
-		# 	time.sleep(2)
-		# 	print(x+'  已经安装!')
+		if 'Tesseract' in x:
+			print(x+'\r',end='')
+			time.sleep(2)
+			print(x+'  已经安装!')
 			bTesseract = True
+		if 'gs' in x and len(x)==2:
+			print(x+'\r',end='')
+			time.sleep(2)
+			bGs = True
+			print(x+'  已经安装!')	
+			
 	if not bImage:
 		if not os.path.exists('./install_imagemagick.bat'):
 			CDMF.print_red_text("当前目录不存 install_imagemagick.bat，请联系软件提供者. ")
 			quit = input("按任意键退出...")
 			sys.exit(1)
 		os.system(ROOTPATH+'\\'+'install_imagemagick.bat')#安装必要的两个软件
-	# if not bTesseract:
-	# 	if not os.path.exists('./install_tesseract.bat'):
-	# 		CDMF.print_red_text("当前目录不存 install_tesseract.bat，请联系软件提供者. ")
-	# 		quit = input("按任意键退出...")
-	# 		sys.exit(1)
-	# 	os.system(ROOTPATH+'\\'+'install_tesseract.bat')#安装必要的两个软件
-
+	if not bTesseract:
+		if not os.path.exists('./install_tesseract.bat'):
+			CDMF.print_red_text("当前目录不存 install_tesseract.bat，请联系软件提供者. ")
+			quit = input("按任意键退出...")
+			sys.exit(1)
+		os.system(ROOTPATH+'\\'+'install_tesseract.bat')#安装必要的两个软件
+	if not bGs:
+		if not os.path.exists('./install_gs.bat'):
+			CDMF.print_red_text("当前目录不存 install_gs.bat，请联系软件提供者. ")
+			quit = input("按任意键退出...")
+			sys.exit(1)
+		os.system(ROOTPATH+'\\'+'install_gs.bat')#安装必要的两个软件
 	starttime = datetime.datetime.now()
 	Job = PDFspliter(ROOTPATH)
 	Job.Run()
