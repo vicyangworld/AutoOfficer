@@ -130,8 +130,8 @@ class PDFspliter(object):
 			print("\n")
 			print("===================  PDF分离及识别器"+VERSION+"(试用版)  ======================")
 			print("|                                                                      |")
-			print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
-			CDMF.print_red_text("|      (1) *每户PDF文件                                                |")
+			print("|      本软件需一个村一个村的处理pdf文件，请保证                       |")
+			CDMF.print_red_text("|(1)  在待处理目录下具有地块属性的excel表，而且要模板化  |")
 			print("|      (2) 生成的文件放在了/其他资料/承包方/                           |")
 			CDMF.print_red_text("|      (3) *注意，扫描质量不同，识别有可能失败 ！                      |")
 			print("|                                                                      |")
@@ -265,9 +265,18 @@ class PDFspliter(object):
 				self.CBFBM = Excel.CBFBM
 				Excel.Close()
 				print("提取成功！")
+		if len(self.DKBM)==0:
+			CDMF.print_red_text('该地块属性的excel文件模板错误！请联系软件提供者！')
+			sys.exit(1)
+		for x in self.DKBM:
+			if x and len(x)!=19:
+				CDMF.print_red_text('该地块属性的excel文件模板错误！请联系软件提供者！')
+				sys.exit(1)
+		PRE_CODE=""
 		for x in self.DKBM:
 			if x:
 				PRE_CODE = x[0:14]
+				break
 		CDMF.print_blue_text('正在扫描待处理文件...','')
 		count = 0
 		for file in allPdfFiles:
@@ -309,22 +318,29 @@ class PDFspliter(object):
 				CurrentPage = AllPages-1
 				Page_GH = AllPages
 				nHT = 0
+				bDK = False
+				bGH = False
+				bHS = False
+				bExp = False
 				while True:
 					CurrentPage -= 1
 					print('   识别 '+str(CurrentPage+1)+'/'+str(AllPages)+'...')
 					txt = self.__getPdfTxtAt(CurrentPage,False)
 					#print(txt)
-					if "归户表" in txt or "表6" in txt:
+					if ("归户表" in txt or "表6" in txt) and not bDK:
+						bGH = True
 						self.__writeToPdf(self.resPath+"CBJYQGH"+PRE_CODE+CBF+".pdf",CurrentPage,AllPages-1)
 						Page_GH = CurrentPage
 						print('      成功生成归户表(表6)'+' page: '+str(CurrentPage+1)+'-'+str(AllPages))
 						nJump = AllPages-2-CurrentPage
 						CurrentPage = CurrentPage-nJump+1
-					if "核实表" in txt or "表4" in txt:
+					if ("核实表" in txt or "表4" in txt)  and not bDK:
+						bHS = True
 						self.__writeToPdf(self.resPath+"CBJYQHS"+PRE_CODE+CBF+".pdf",CurrentPage,Page_GH-1)
 						Page_HS = CurrentPage
 						print('      成功生成核实(表4)'+' page: '+str(CurrentPage+1)+'-'+str(Page_GH))
 					if "界址点成果表" in txt or "界址点坐标" in txt or "界址点编号" in txt:
+						bDK = True
 						bRec = False
 						digitals = re.findall(r'\d+', txt)
 						digital_list=[]
@@ -358,10 +374,10 @@ class PDFspliter(object):
 						CurrentPage -=2
 
 					bHT = False
-					if "一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt or ("拍卖" in txt and "归户表" not in txt) or "四荒" in txt or "一百年" in txt or "使用期" in txt \
-						or "鼓励" in txt or "明细" in txt or "承包期" in txt or "收回" \
-						in txt or "另行发包" in txt or "上交国家" in txt or "另行发惩" in txt or "基础设施" in txt:
-
+					if ("合同一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt or ("拍卖" in txt and "归户表" not in txt) \
+						or "四荒" in txt or "一百年" in txt or "使用期" in txt \
+						or "鼓励" in txt or "明细" in txt or "承包期" in txt or "收回" in txt \
+						or "另行发包" in txt or "上交国家" in txt or "另行发惩" in txt or "基础设施" in txt ) and not "核实表" in txt:
 						bHT = True
 						nHT += 1
 						if nHT==1:
@@ -372,7 +388,12 @@ class PDFspliter(object):
 						self.__writeToPdf(self.resPath+"HT"+PRE_CODE+CBF+".pdf",CurrentPage+1,end)
 						print('      成功生成合同'+' page: '+str(CurrentPage+2)+'-'+str(end+1))
 						break
-
+					if not bGH and not bHS and AllPages-CurrentPage>10:
+						CDMF.print_red_text('      该pdf文件读取失败,可能该文件反转')
+						bExp = True
+						break
+				if bExp:
+					continue
 				bCBFDCB = False
 				txt = self.__getPdfTxtAt(0,False)
 				if "表2" in txt or '调查表' in txt or '发包方' in txt or '承包方' in txt or '联系电话' in txt:
@@ -396,7 +417,6 @@ class PDFspliter(object):
 						or "常住" in txt or "登记" in txt or "曾用名" in txt or "籍贯" in txt \
 						or "迁来" in txt or "本市" in txt \
 						or "家庭成员共同推选" in txt or "受托方" in txt or "何时" in txt:
-						print(txt)
 						pass
 					else:
 						break
