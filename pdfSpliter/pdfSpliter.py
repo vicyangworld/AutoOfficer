@@ -90,7 +90,7 @@ class easyExcel(object):
 			nColumns = Activesheet.UsedRange.Columns.Count
 			self.DKBM = []
 			self.CBFBM = []
-			for i in range(2,nRows+1):
+			for i in range(1,nRows+1):
 				for j in range(3,5):
 					string = Activesheet.Cells(i,j).Value
 					if string!=None and j==3:
@@ -131,7 +131,7 @@ class PDFspliter(object):
 			print("===================  PDF分离及识别器"+VERSION+"(试用版)  ======================")
 			print("|                                                                      |")
 			print("|      本软件需一个村一个村的处理pdf文件，请保证                       |")
-			CDMF.print_red_text("|(1)  在待处理目录下具有地块属性的excel表，而且要模板化  |")
+			CDMF.print_red_text("|      (1)  在待处理目录下具有地块属性的excel表，而且要模板化          |")
 			print("|      (2) 生成的文件放在了/其他资料/承包方/                           |")
 			CDMF.print_red_text("|      (3) *注意，扫描质量不同，识别有可能失败 ！                      |")
 			print("|                                                                      |")
@@ -258,23 +258,24 @@ class PDFspliter(object):
 		for x in allPdfFiles:
 			if ("地块属性.xlsx" in x or "地块属性.xls" in x ) and not x.startswith('~'):
 				self.DKSXFile = x
-				print("正在提取 " + os.path.join(self.__PathOfInputFiles,x) + "信息")
+				print("正在提取 " + os.path.join(self.__PathOfInputFiles,x) + " 信息......")
 				Excel = easyExcel(os.path.join(self.__PathOfInputFiles,x))
 				Excel.read_areacode_time()
 				self.DKBM = Excel.DKBM
 				self.CBFBM = Excel.CBFBM
 				Excel.Close()
-				print("提取成功！")
 		if len(self.DKBM)==0:
 			CDMF.print_red_text('该地块属性的excel文件模板错误！请联系软件提供者！')
 			sys.exit(1)
 		for x in self.DKBM:
-			if x and len(x)!=19:
-				CDMF.print_red_text('该地块属性的excel文件模板错误！请联系软件提供者！')
-				sys.exit(1)
+			if x.isdigit():
+				if x and len(x)!=19:
+					CDMF.print_red_text('提取失败! DKBM地块编码不正确: '+str(x)+' ,不是19位！请检查地块属性文件的第 '+str(self.DKBM.index(x)+1) + '行！')
+					sys.exit(1)
+		print("提取成功！")
 		PRE_CODE=""
 		for x in self.DKBM:
-			if x:
+			if x and x.isdigit():
 				PRE_CODE = x[0:14]
 				break
 		CDMF.print_blue_text('正在扫描待处理文件...','')
@@ -285,6 +286,7 @@ class PDFspliter(object):
 				count +=1
 		CDMF.print_blue_text(' 共有 '+str(count)+' 个文件需要处理')
 		index = 0
+		nTemp = 0
 		for file in allPdfFiles:
 			(fname,extension) = os.path.splitext(file)
 			if file.endswith('.pdf') and fname.isdigit():
@@ -318,30 +320,48 @@ class PDFspliter(object):
 				CurrentPage = AllPages-1
 				Page_GH = AllPages
 				nHT = 0
+				nHTT = 0
 				bDK = False
 				bGH = False
 				bHS = False
 				bExp = False
+				nDKbeg = 0
+				nDKend = 0
+				bRec = False
+				nLoop = 0
+				bHTT = False
+				bHT = False
+				bTempT = True
+				bTemp = True
+				nDK = 0
 				while True:
-					CurrentPage -= 1
 					print('   识别 '+str(CurrentPage+1)+'/'+str(AllPages)+'...')
 					txt = self.__getPdfTxtAt(CurrentPage,False)
-					#print(txt)
+					# print(txt)
 					if ("归户表" in txt or "表6" in txt) and not bDK:
 						bGH = True
-						self.__writeToPdf(self.resPath+"CBJYQGH"+PRE_CODE+CBF+".pdf",CurrentPage,AllPages-1)
+						try:
+							GHend = HTTbeg-1
+						except Exception as e:
+							GHend = AllPages-1
+						self.__writeToPdf(self.resPath+"CBJYQGH"+PRE_CODE+CBF+".pdf",CurrentPage,GHend)
 						Page_GH = CurrentPage
-						print('      成功生成归户表(表6)'+' page: '+str(CurrentPage+1)+'-'+str(AllPages))
-						nJump = AllPages-2-CurrentPage
-						CurrentPage = CurrentPage-nJump+1
+						print('      成功生成归户表(表6)'+' page: '+str(CurrentPage+1)+'-'+str(GHend+1))
+						# nJump = GHend-2-CurrentPage
+						# CurrentPage = CurrentPage-nJump+1
+
 					if ("核实表" in txt or "表4" in txt)  and not bDK:
 						bHS = True
 						self.__writeToPdf(self.resPath+"CBJYQHS"+PRE_CODE+CBF+".pdf",CurrentPage,Page_GH-1)
 						Page_HS = CurrentPage
 						print('      成功生成核实(表4)'+' page: '+str(CurrentPage+1)+'-'+str(Page_GH))
-					if "界址点成果表" in txt or "界址点坐标" in txt or "界址点编号" in txt:
+
+					if ("界址点成果表" in txt or "界址点坐标" in txt or "界址点编号" in txt) and bGH:
 						bDK = True
 						bRec = False
+						nLoop += 1
+						if nLoop==1:
+							nDKend = CurrentPage
 						digitals = re.findall(r'\d+', txt)
 						digital_list=[]
 						for digital in digitals:
@@ -360,24 +380,33 @@ class PDFspliter(object):
 							if len(digital_list)>=1:
 								bRec = True
 								DK = digital_list[0][-5:]
+					if ("承包地块调查表" in txt or "表3" in txt) or (("一等地" in txt  or "二等地" in txt or "三等地" in txt \
+						or "四等地" in txt  or "五等地" in txt  or "六等地" in txt  or "七等地" in txt  or "八等地" in txt \
+						or "九等地" in txt  or "十等地" in txt) and ("承包地块调查表" in txt or "表3" in txt)):
+						nDKbeg = CurrentPage
+						nLoop = 0
+						nDK += 1
 						if bRec:
 							if DK in curDK:
-								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+DK+".pdf",CurrentPage-2,CurrentPage)
-								print('      '+DK+'成功生成地块调查表'+PRE_CODE+DK+' page: '+str(CurrentPage-1)+'-'+str(CurrentPage+1))
+								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+DK+".pdf",nDKbeg,nDKend)
+								print('      '+DK+'成功生成地块调查表'+PRE_CODE+DK+' page: '+str(nDKbeg+1)+'-'+str(nDKend+1))
 							else:
-								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+DK+"_XXX.pdf",CurrentPage-2,CurrentPage)
+								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+DK+"_XXX.pdf",nDKbeg,nDKend)
 								CDMF.print_red_text('      '+DK+'地块代码可能识别失败，但已保存为'+PRE_CODE+DK+"_XXX.pdf"+'  page: '+str(CurrentPage-2)+'-'+str(CurrentPage)+ '  请检查该文件并重命名！')
-								log('      '+DK+'地块代码可能识别失败但已保存为'+PRE_CODE+DK+"_XXX.pdf"+' page: '+str(CurrentPage-1)+'-'+str(CurrentPage+1) +"   文件"+file+ '  请检查该文件并重命名！')
+								log('      '+DK+'地块代码可能识别失败但已保存为'+PRE_CODE+DK+"_XXX.pdf"+' page: '+str(nDKbeg+1)+'-'+str(nDKend+1) +"   文件"+file+ '  请检查该文件并重命名！')
 						else:
-							self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+'XXXXX'+"_XXX.pdf",CurrentPage-2,CurrentPage)
-							print('      有地块代码未识别成功，已经保存到为'+PRE_CODE+'XXXXX'+"_XXX.pdf"+'   请检查并重命名！')
-						CurrentPage -=2
-
+							nTemp += 1
+							self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf",CurrentPage-2,CurrentPage)
+							print('      有地块代码未识别成功，已经保存到为'+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf"+'   请检查并重命名！')
+						# CurrentPage -=2
 					bHT = False
 					if ("合同一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt or ("拍卖" in txt and "归户表" not in txt) \
 						or "四荒" in txt or "一百年" in txt or "使用期" in txt \
 						or "鼓励" in txt or "明细" in txt or "承包期" in txt or "收回" in txt \
-						or "另行发包" in txt or "上交国家" in txt or "另行发惩" in txt or "基础设施" in txt ) and not "核实表" in txt:
+						or "另行发包" in txt or "上交国家" in txt or "另行发惩" in txt or "基础设施" in txt ) and not "核实表" in txt \
+						and not (("承包地块调查表" in txt or "表3" in txt) or (("一等地" in txt  or "二等地" in txt or "三等地" in txt \
+						or "四等地" in txt  or "五等地" in txt  or "六等地" in txt  or "七等地" in txt  or "八等地" in txt \
+						or "九等地" in txt  or "十等地" in txt) and ("承包地块调查表" in txt or "表3" in txt))):
 						bHT = True
 						nHT += 1
 						if nHT==1:
@@ -388,10 +417,15 @@ class PDFspliter(object):
 						self.__writeToPdf(self.resPath+"HT"+PRE_CODE+CBF+".pdf",CurrentPage+1,end)
 						print('      成功生成合同'+' page: '+str(CurrentPage+2)+'-'+str(end+1))
 						break
-					if not bGH and not bHS and AllPages-CurrentPage>10:
-						CDMF.print_red_text('      该pdf文件读取失败,可能该文件反转')
+
+					if not bGH and not bHS and AllPages-CurrentPage>15:
+						CDMF.print_red_text('      该pdf文件读取失败,可能该文件反转或印刷质量太差')
 						bExp = True
 						break
+
+					CurrentPage -= 1
+
+
 				if bExp:
 					continue
 				bCBFDCB = False
