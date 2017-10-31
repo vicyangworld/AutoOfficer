@@ -335,6 +335,8 @@ class PDFspliter(object):
 				bTemp = True
 				nDK = 0
 				while True:
+					if CurrentPage <0:
+						break
 					print('   识别 '+str(CurrentPage+1)+'/'+str(AllPages)+'...')
 					txt = self.__getPdfTxtAt(CurrentPage,False)
 					# print(txt)
@@ -347,8 +349,6 @@ class PDFspliter(object):
 						self.__writeToPdf(self.resPath+"CBJYQGH"+PRE_CODE+CBF+".pdf",CurrentPage,GHend)
 						Page_GH = CurrentPage
 						print('      成功生成归户表(表6)'+' page: '+str(CurrentPage+1)+'-'+str(GHend+1))
-						# nJump = GHend-2-CurrentPage
-						# CurrentPage = CurrentPage-nJump+1
 
 					if ("核实表" in txt or "表4" in txt)  and not bDK:
 						bHS = True
@@ -380,7 +380,8 @@ class PDFspliter(object):
 							if len(digital_list)>=1:
 								bRec = True
 								DK = digital_list[0][-5:]
-					if ("承包地块调查表" in txt or "表3" in txt) or (("一等地" in txt  or "二等地" in txt or "三等地" in txt \
+					if ("承包地块调查表" in txt or "表3" in txt or "四邻无争忧" in txt or "地利等级采用" in txt) \
+						or (("一等地" in txt  or "二等地" in txt or "三等地" in txt \
 						or "四等地" in txt  or "五等地" in txt  or "六等地" in txt  or "七等地" in txt  or "八等地" in txt \
 						or "九等地" in txt  or "十等地" in txt) and ("承包地块调查表" in txt or "表3" in txt)):
 						nDKbeg = CurrentPage
@@ -391,25 +392,27 @@ class PDFspliter(object):
 								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+DK+".pdf",nDKbeg,nDKend)
 								print('      '+DK+'成功生成地块调查表'+PRE_CODE+DK+' page: '+str(nDKbeg+1)+'-'+str(nDKend+1))
 							else:
-								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+DK+"_XXX.pdf",nDKbeg,nDKend)
-								CDMF.print_red_text('      '+DK+'地块代码可能识别失败，但已保存为'+PRE_CODE+DK+"_XXX.pdf"+'  page: '+str(CurrentPage-2)+'-'+str(CurrentPage)+ '  请检查该文件并重命名！')
-								log('      '+DK+'地块代码可能识别失败但已保存为'+PRE_CODE+DK+"_XXX.pdf"+' page: '+str(nDKbeg+1)+'-'+str(nDKend+1) +"   文件"+file+ '  请检查该文件并重命名！')
+								nTemp += 1
+								self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf",nDKbeg,nDKend)
+								print('      '+'地块代码可能识别失败，但已保存为'+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf"+'  page: '+str(CurrentPage-2)+'-'+str(CurrentPage)+ '  请检查该文件并重命名！')
+								log('      '+'地块代码可能识别失败但已保存为'+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf"+' page: '+str(nDKbeg+1)+'-'+str(nDKend+1) +"   文件"+file+ '  请检查该文件并重命名！')
 						else:
 							nTemp += 1
-							self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf",CurrentPage-2,CurrentPage)
+							self.__writeToPdf(self.resPath+"CBFDKDCB"+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf",nDKbeg,nDKend)
 							print('      有地块代码未识别成功，已经保存到为'+PRE_CODE+'_'+str(nTemp)+"_XXX.pdf"+'   请检查并重命名！')
 						# CurrentPage -=2
 					bHT = False
 					if ("合同一式三份" in txt or "单位各一份" in txt or "另行拍卖" in txt or ("拍卖" in txt and "归户表" not in txt) \
 						or "四荒" in txt or "一百年" in txt or "使用期" in txt \
-						or "鼓励" in txt or "明细" in txt or "承包期" in txt or "收回" in txt \
+						or "鼓励" in txt or "明细" in txt or "承包期" in txt \
 						or "另行发包" in txt or "上交国家" in txt or "另行发惩" in txt or "基础设施" in txt ) and not "核实表" in txt \
 						and not (("承包地块调查表" in txt or "表3" in txt) or (("一等地" in txt  or "二等地" in txt or "三等地" in txt \
 						or "四等地" in txt  or "五等地" in txt  or "六等地" in txt  or "七等地" in txt  or "八等地" in txt \
-						or "九等地" in txt  or "十等地" in txt) and ("承包地块调查表" in txt or "表3" in txt))):
+						or "九等地" in txt  or "十等地" in txt) and ("承包地块调查表" in txt or "表3" in txt or "四邻无争忧" in txt or "地利等级采用" in txt))):
 						bHT = True
 						nHT += 1
 						if nHT==1:
+							print(txt)
 							end = CurrentPage
 					else:
 						bHT = False
@@ -422,9 +425,7 @@ class PDFspliter(object):
 						CDMF.print_red_text('      该pdf文件读取失败,可能该文件反转或印刷质量太差')
 						bExp = True
 						break
-
 					CurrentPage -= 1
-
 
 				if bExp:
 					continue
@@ -459,8 +460,9 @@ class PDFspliter(object):
 				self.__writeToPdf(self.resPath+"CBFMC"+PRE_CODE+CBF+".pdf",pageNum-1,CurrentPagetemp-1)
 				print('      成功生成承包方身份证明'+' page:'+str(pageNum)+'-'+str(CurrentPagetemp))
 
-				self.__writeToPdf(self.resPath+"CBFJTCY"+PRE_CODE+CBF+".pdf",CurrentPagetemp,CurrentPage)
-				print('      成功生成家庭成员'+' page: '+str(CurrentPagetemp+1)+'-'+str(CurrentPage+1))
+				if CurrentPagetemp<=CurrentPage:
+					self.__writeToPdf(self.resPath+"CBFJTCY"+PRE_CODE+CBF+".pdf",CurrentPagetemp,CurrentPage)
+					print('      成功生成家庭成员'+' page: '+str(CurrentPagetemp+1)+'-'+str(CurrentPage+1))
 
 				endtime1 = datetime.datetime.now()
 				CDMF.print_blue_text('      用时 '+str(endtime1 - starttime1))
