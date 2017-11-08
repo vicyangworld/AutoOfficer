@@ -19,7 +19,7 @@ import socket
 import multiProcessPackage
 
 VERSION = '3.0.0'
-CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION+" 特供赟哥")
+CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION+" 特供王贺奇")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def log(x):
@@ -137,7 +137,7 @@ class easyExcel(object):
 				nValidRows = nValidRows + 1
 				#这是一个疑点,为什么要加一个.copy()，没有弄清楚还
 				AreaTimeAdict[key]=tempList.copy()
-				# print((''.join(AreaTimeAdict[key])[0])+"中冶三勘院")
+				# print((''.join(AreaTimeAdict[key])[0])+"保定华北勘查")
 				# os.system('pause')
 				tempList.clear()
 			CDMF.print_blue_text("成功, 共有 "+str(nValidRows)+" 个村庄.")
@@ -158,7 +158,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 	PersionalDir = RootPath + fileOrDir + "\\"
 	FileOrDirInPersionalDir_list = os.listdir(fileOrDir)
 	filesCount=0
-	# print(''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
+	# print(''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
 	#到这行，农业局确权档案卷内目录.doc肯定存在，无需判断
 	if bRegenerate:
 		if os.path.exists(PersionalDir +"农业局确权档案卷内目录.doc"):
@@ -233,7 +233,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 				nTotalPages = Pages_adict[x]+nTotalPages
 				break
 		# Word.set_cell(2,2,HuZhu)
-		Word.set_cell(2,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
+		Word.set_cell(2,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
 		if bWithTime:
 			Word.set_cell(2,4,(AreaTimeAdict[HuZhuVillageCode])[2])  # "日期"
 		Word.set_cell(2,5,nTotalPages)
@@ -248,7 +248,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		if not bDjb:
 			nTotalPages = nTotalPages + 1 #如果没有承包方调查表，默认承包方调查表为1页
 		# Word.set_cell(3,2,HuZhu)
-		Word.set_cell(3,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
+		Word.set_cell(3,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
 		if bWithTime:
 			Word.set_cell(3,4,(AreaTimeAdict[HuZhuVillageCode])[3])  # "日期"
 		Word.set_cell(3,5,nTotalPages)
@@ -258,7 +258,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			if '地块调查表' in x:
 				nTotalPages = Pages_adict[x]+nTotalPages
 		# Word.set_cell(4,2,HuZhu)
-		Word.set_cell(4,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
+		Word.set_cell(4,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
 		if bWithTime:
 			Word.set_cell(4,4,(AreaTimeAdict[HuZhuVillageCode])[4])  # "日期"
 		Word.set_cell(4,5,nTotalPages)
@@ -290,7 +290,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		if bWithTime:
 			Word.set_cell(7,4,(AreaTimeAdict[HuZhuVillageCode])[7])  # "日期"
 		Word.set_cell(7,5,str(nTotalPages)+"-"+str(nTotalPages+PersonNumber))
-		nTotalPages = nTotalPages + PersonNumber + 2
+		nTotalPages = nTotalPages + PersonNumber
 		Pages_adict.clear()
 		Word.close()
 	except Exception as e:
@@ -347,7 +347,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			#设置表2的全宗号
 			Word.set_cell(1,0,'53',TableIndex=1,FontSize=12)#小四
 			#设置表2的分类号
-			strTemp = 'TQ0202'+(AreaTimeAdict[HuZhuVillageCode])[0][2]+(AreaTimeAdict[HuZhuVillageCode])[8]
+			strTemp = 'TQ0202'+(AreaTimeAdict[HuZhuVillageCode])[0][4]+(AreaTimeAdict[HuZhuVillageCode])[8]
 			Word.set_cell(1,1,strTemp,TableIndex=1,FontSize=12)#小四
 			#设置表2的案卷号
 			#Word.set_cell(1,2,str(HuzhuPersonalCode),TableIndex=1,FontSize=12)#小四
@@ -372,7 +372,7 @@ class Job(object):
 		CDMF.set_cmd_color(CmdFormat.FOREGROUND_RED | CmdFormat.FOREGROUND_GREEN | \
 			CmdFormat.FOREGROUND_BLUE | CmdFormat.FOREGROUND_INTENSITY)
 		print("\n")
-		print("=================== 自动Ofiice v"+VERSION+" 特供赟哥  ========================")
+		print("=================== 自动Ofiice v"+VERSION+" 特供王贺奇  ======================")
 		print("|                                                                      |")
 		print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 		CDMF.print_red_text("|      (1) *包含每个村民的个人目录                                     |")
