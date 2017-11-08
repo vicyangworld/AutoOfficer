@@ -18,7 +18,7 @@ import time
 import socket
 import multiProcessPackage
 
-VERSION = '2.2.0'
+VERSION = '3.0.0'
 CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION+" 特供赟哥")
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
@@ -117,7 +117,7 @@ class easyExcel(object):
 					if string!=None:
 						if j==1:
 							key = re.sub("\D", "", string)
-							strRe = (re.split(r'[县镇乡村]',string)[1:3])
+							strRe = (re.split(r'([县镇乡村])',string)[2:6])
 							strRe.append(str(nTempCode)) #加入乡镇编号，用于填充“软卷皮封面.doc”中的分类号
 							tempList.append(strRe)
 						elif j<=8 and j>1:
@@ -137,6 +137,8 @@ class easyExcel(object):
 				nValidRows = nValidRows + 1
 				#这是一个疑点,为什么要加一个.copy()，没有弄清楚还
 				AreaTimeAdict[key]=tempList.copy()
+				# print((''.join(AreaTimeAdict[key])[0])+"中冶三勘院")
+				# os.system('pause')
 				tempList.clear()
 			CDMF.print_blue_text("成功, 共有 "+str(nValidRows)+" 个村庄.")
 			log("成功, 共有 "+str(nValidRows)+" 个村庄.")
@@ -156,16 +158,17 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 	PersionalDir = RootPath + fileOrDir + "\\"
 	FileOrDirInPersionalDir_list = os.listdir(fileOrDir)
 	filesCount=0
-	#到这行，卷内文件目录.doc肯定存在，无需判断
+	# print(''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
+	#到这行，农业局确权档案卷内目录.doc肯定存在，无需判断
 	if bRegenerate:
-		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
-			os.remove(PersionalDir +"卷内文件目录.doc")
-		shutil.copyfile(RootPath+"卷内文件目录.doc", PersionalDir +"卷内文件目录.doc")
+		if os.path.exists(PersionalDir +"农业局确权档案卷内目录.doc"):
+			os.remove(PersionalDir +"农业局确权档案卷内目录.doc")
+		shutil.copyfile(RootPath+"农业局确权档案卷内目录.doc", PersionalDir +"农业局确权档案卷内目录.doc")
 	else:
-		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
+		if os.path.exists(PersionalDir +"农业局确权档案卷内目录.doc"):
 			return
 		else:
-			shutil.copyfile(RootPath+"卷内文件目录.doc", PersionalDir +"卷内文件目录.doc")
+			shutil.copyfile(RootPath+"农业局确权档案卷内目录.doc", PersionalDir +"农业局确权档案卷内目录.doc")
 	#到这行，软卷皮封面.doc肯定存在或者self.CopyFengmian为false
 	if CopyFengmian:
 		if os.path.exists(RootPath+"软卷皮封面.doc"):
@@ -209,16 +212,17 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		finish=time.clock()
 		infoString = ' '+str(ProcessOrder)+'/'+str(nTotal)+'     ' +fileOrDir + "       操作失败" +"          "+str(finish-start)[0:6]
 		CDMF.print_red_text(infoString)
-		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
-			os.remove(PersionalDir +"卷内文件目录.doc")
+		if os.path.exists(PersionalDir +"农业局确权档案卷内目录.doc"):
+			os.remove(PersionalDir +"农业局确权档案卷内目录.doc")
 		log(infoString + "     X")
 		return
-	# 更新“卷内文件目录.doc”
+	# 更新“农业局确权档案卷内目录.doc”
 	try:
-		Word = easyWord(PersionalDir+"卷内文件目录.doc")
+		Word = easyWord(PersionalDir+"农业局确权档案卷内目录.doc")
 		# 填写目录的第1顺序号
 		nTotalPages = 1
-		Word.set_cell(1,2,HuZhu) # "责任者"
+		# Word.set_cell(1,2,HuZhu) # "责任者"
+		Word.set_cell(1,2,"盐山县农业局") # "责任者"
 		if bWithTime:
 			Word.set_cell(1,4,(AreaTimeAdict[HuZhuVillageCode])[1])  # "日期"
 		Word.set_cell(1,5,nTotalPages)     # "页号"
@@ -228,7 +232,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			if '登记簿' in x:
 				nTotalPages = Pages_adict[x]+nTotalPages
 				break
-		Word.set_cell(2,2,HuZhu)
+		# Word.set_cell(2,2,HuZhu)
+		Word.set_cell(2,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
 		if bWithTime:
 			Word.set_cell(2,4,(AreaTimeAdict[HuZhuVillageCode])[2])  # "日期"
 		Word.set_cell(2,5,nTotalPages)
@@ -242,7 +247,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 				break
 		if not bDjb:
 			nTotalPages = nTotalPages + 1 #如果没有承包方调查表，默认承包方调查表为1页
-		Word.set_cell(3,2,HuZhu)
+		# Word.set_cell(3,2,HuZhu)
+		Word.set_cell(3,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
 		if bWithTime:
 			Word.set_cell(3,4,(AreaTimeAdict[HuZhuVillageCode])[3])  # "日期"
 		Word.set_cell(3,5,nTotalPages)
@@ -251,7 +257,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		for x in Pages_adict.keys():
 			if '地块调查表' in x:
 				nTotalPages = Pages_adict[x]+nTotalPages
-		Word.set_cell(4,2,HuZhu)
+		# Word.set_cell(4,2,HuZhu)
+		Word.set_cell(4,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"中冶三勘院")
 		if bWithTime:
 			Word.set_cell(4,4,(AreaTimeAdict[HuZhuVillageCode])[4])  # "日期"
 		Word.set_cell(4,5,nTotalPages)
@@ -261,14 +268,15 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			if '公示结果归户表' in x:
 				nTotalPages = Pages_adict[x]+nTotalPages
 				#承包方推荐证明
-		Word.set_cell(5,2,HuZhu)
+		Word.set_cell(5,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+HuZhu)
 		if bWithTime:
 			Word.set_cell(5,4,(AreaTimeAdict[HuZhuVillageCode])[5])  # "日期"
 		Word.set_cell(5,5,nTotalPages)
 		nTotalPages = nTotalPages+1
 
 		# 填写目录的第6顺序号
-		Word.set_cell(6,2,CunZhang+HuZhu)
+		# Word.set_cell(6,2,CunZhang+HuZhu)
+		Word.set_cell(6,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+HuZhu)
 		if bWithTime:
 			Word.set_cell(6,4,(AreaTimeAdict[HuZhuVillageCode])[6])  # "日期"
 		Word.set_cell(6,5,nTotalPages)
@@ -286,7 +294,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		Pages_adict.clear()
 		Word.close()
 	except Exception as e:
-		infoString = "更新 "+PersionalDir+"\"卷内文件目录.doc\" 发生错误."
+		infoString = "更新 "+PersionalDir+"\"农业局确权档案卷内目录.doc\" 发生错误."
 		CDMF.print_red_text(infoString)
 		log(infoString)
 		return
@@ -342,7 +350,8 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			strTemp = 'TQ0202'+(AreaTimeAdict[HuZhuVillageCode])[0][2]+(AreaTimeAdict[HuZhuVillageCode])[8]
 			Word.set_cell(1,1,strTemp,TableIndex=1,FontSize=12)#小四
 			#设置表2的案卷号
-			Word.set_cell(1,2,str(HuzhuPersonalCode),TableIndex=1,FontSize=12)#小四
+			#Word.set_cell(1,2,str(HuzhuPersonalCode),TableIndex=1,FontSize=12)#小四
+			Word.set_cell(1,2,str(ProcessOrder),TableIndex=1,FontSize=12)#小四
 			Word.close()
 	except Exception as e:
 		infoString = "更新 "+PersionalDir+"\"软卷皮封面.doc\" 发生错误."
@@ -367,7 +376,7 @@ class Job(object):
 		print("|                                                                      |")
 		print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 		CDMF.print_red_text("|      (1) *包含每个村民的个人目录                                     |")
-		CDMF.print_red_text("|      (2) *必须具有\"卷内文件目录\"文件模板(.doc或.docx)                |")
+		CDMF.print_red_text("|      (2) *必须具有\"农业局确权档案卷内目录\"文件模板(.doc或.docx)      |")
 		print("|      (3) 可以添加\"地区代码及时间表\"文件模板(.xls或.xlsx)             |")
 		print("|      (4) 可以添加\"软卷皮封面\"文件模板(.xls或.xlsx)                   |")
 		print("|                                                                      |")
@@ -381,10 +390,10 @@ class Job(object):
 			print("No such path: "+self.RootPath)
 		else:
 			#print("扫描 "+ self.RootPath)
-			if os.path.exists(self.RootPath+"卷内文件目录.doc"):
+			if os.path.exists(self.RootPath+"农业局确权档案卷内目录.doc") or os.path.exists(self.RootPath+"农业局确权档案卷内目录.docx"):
 				pass
 			else:
-				infoString = "在 "+ self.RootPath + " 没有找到\"卷内文件目录.doc\""
+				infoString = "在 "+ self.RootPath + " 没有找到\"农业局确权档案卷内目录.doc(或.docx)\""
 				CDMF.print_red_text(infoString)
 				log(infoString)
 				CDMF.print_red_text("程序中断，请完善相应资料！")
@@ -482,7 +491,7 @@ class Job(object):
 			for fileOrDir in self.filesOrDirsInRoot:
 				if os.path.isdir(fileOrDir) and fileOrDir.startswith(('1','2','3','4','5','6','7','8','9','0')):
 					self.nNumFile = self.nNumFile + 1
-					if not os.path.exists(self.RootPath + fileOrDir + "\\" +"卷内文件目录.doc"): #扫描没有目录的
+					if not os.path.exists(self.RootPath + fileOrDir + "\\" +"农业局确权档案卷内目录.doc"): #扫描没有目录的
 						self.nNumNoContent  = self.nNumNoContent + 1
 
 			CDMF.print_blue_text("扫描完毕！共有 "+str(self.nNumFile) + " 户的资料,",end='')
@@ -536,7 +545,7 @@ class Job(object):
 			ProcessOrder = 0
 			for fileOrDir in self.filesOrDirsInRoot:
 				if os.path.isdir(fileOrDir) and fileOrDir.startswith(('1','2','3','4','5','6','7','8','9','0')):
-					if not self.bRegenerate and os.path.exists(self.RootPath + fileOrDir + "\\" +"卷内文件目录.doc"):
+					if not self.bRegenerate and os.path.exists(self.RootPath + fileOrDir + "\\" +"农业局确权档案卷内目录.doc"):
 						continue
 					ProcessOrder += 1
 					multiP.apply_async(tasks, args=(fileOrDir,self.RootPath,self.AreaTimeAdict,self.bRegenerate,self.bWithTime,self.CopyFengmian,self.nTotal,ProcessOrder,),callback=log)
