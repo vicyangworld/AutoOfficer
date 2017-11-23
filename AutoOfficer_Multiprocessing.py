@@ -18,8 +18,9 @@ import time
 import socket
 import multiProcessPackage
 
-VERSION = '3.0.0'
-CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION+" 特供王贺奇")
+VERSION = '3.1.0'
+COMPANY = "中冶三勘院"
+CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION)
 ISOTIMEFORMAT='%Y-%m-%d %X'
 
 def log(x):
@@ -233,7 +234,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 				nTotalPages = Pages_adict[x]+nTotalPages
 				break
 		# Word.set_cell(2,2,HuZhu)
-		Word.set_cell(2,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
+		Word.set_cell(2,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+COMPANY)
 		if bWithTime:
 			Word.set_cell(2,4,(AreaTimeAdict[HuZhuVillageCode])[2])  # "日期"
 		Word.set_cell(2,5,nTotalPages)
@@ -248,7 +249,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 		if not bDjb:
 			nTotalPages = nTotalPages + 1 #如果没有承包方调查表，默认承包方调查表为1页
 		# Word.set_cell(3,2,HuZhu)
-		Word.set_cell(3,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
+		Word.set_cell(3,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+COMPANY)
 		if bWithTime:
 			Word.set_cell(3,4,(AreaTimeAdict[HuZhuVillageCode])[3])  # "日期"
 		Word.set_cell(3,5,nTotalPages)
@@ -258,7 +259,7 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 			if '地块调查表' in x:
 				nTotalPages = Pages_adict[x]+nTotalPages
 		# Word.set_cell(4,2,HuZhu)
-		Word.set_cell(4,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+"保定华北勘查")
+		Word.set_cell(4,2,''.join((AreaTimeAdict[HuZhuVillageCode])[0][0:4])+COMPANY)
 		if bWithTime:
 			Word.set_cell(4,4,(AreaTimeAdict[HuZhuVillageCode])[4])  # "日期"
 		Word.set_cell(4,5,nTotalPages)
@@ -303,10 +304,9 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,CopyFengmian,nT
 	try:
 		if CopyFengmian:
 			Word = easyWord(PersionalDir+"软卷皮封面.doc")
-
-			mxxx = re.split(r'([镇村（])', Word.get_cell(2,0))  # r'([镇村（])'加括号保留分隔符
+			mxxx = re.split(r'([镇村土])', Word.get_cell(2,0))  # r'([镇村（])'加括号保留分隔符
 			mxxx[0] = '\r'+(AreaTimeAdict[HuZhuVillageCode])[0][0]
-			mxxx[2] = (AreaTimeAdict[HuZhuVillageCode])[0][1]
+			mxxx[2] = (AreaTimeAdict[HuZhuVillageCode])[0][2]
 			mxxx[4] = HuZhu
 			Word.set_cell(2,0,''.join(mxxx),FontSize=18)
 
@@ -372,7 +372,7 @@ class Job(object):
 		CDMF.set_cmd_color(CmdFormat.FOREGROUND_RED | CmdFormat.FOREGROUND_GREEN | \
 			CmdFormat.FOREGROUND_BLUE | CmdFormat.FOREGROUND_INTENSITY)
 		print("\n")
-		print("=================== 自动Ofiice v"+VERSION+" 特供王贺奇  ======================")
+		print("=================== 自动Ofiice v"+VERSION+"   ===============================")
 		print("|                                                                      |")
 		print("|      将本程序放在根目录，运行之前请确保根目录下具有                  |")
 		CDMF.print_red_text("|      (1) *包含每个村民的个人目录                                     |")
