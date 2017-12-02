@@ -1,7 +1,7 @@
 # _*_ coding:utf-8 _**
 # Author:vic yang
 # Date: 2017-9
-# AutoOfficer 
+# AutoOfficer
 # Version:2.2.0
 
 import win32com
@@ -18,6 +18,7 @@ import time
 import socket
 import multiProcessPackage
 import ReRange,sys
+import docx
 
 VERSION = '2.2.0'
 CDMF = CmdFormat.CmdFormat("自动Ofiice v"+VERSION+" 特供赟哥")
@@ -45,21 +46,26 @@ def calculate_fails():
 
 class easyWord(object):
 	"""A class for opreating word file"""
-	def __init__(self, FileName):
+	def __init__(self, FileName, bUseDocx):
+		self.PagesCount = 0
+		self.bUseDocx = bUseDocx
 		self.WordAPP = win32com.client.DispatchEx('Word.Application')
-		# self.WordAPP.Visible=False
-		# self.WordAPP.DisplayAlerts = False
 		self.WordAPP.Visible = 0
 		self.WordAPP.DisplayAlerts = 0
-		if FileName:
-			self.FileName = FileName
-			self.Doc = self.WordAPP.Documents.Open(FileName)
-		else:
-			log("文件 "+FileName+" 没找到！")
-			raise IOError("文件 "+FileName+" 没找到！")
-			return
+		# self.FileName = FileName
+		self.Doc = self.WordAPP.Documents.Open(FileName)
+		self.PagesCount=self.WordAPP.ActiveWindow.ActivePane.Pages.Count
+		print(FileName)
+		if self.bUseDocx :
+			if not FileName.endswith('x'):
+				FileName += 'x'
+				self.Doc.SaveAs(FileName,16)
+			self.f = open(FileName, 'rb')
+			self.Docx=docx.Document(self.f)
+			self.personNumber = self.Docx.tables[1].cell(0,7).text
+			self.leader = self.Docx.tables[0].cell(0,10).text
 	def pages_count(self):
-		return self.WordAPP.ActiveWindow.ActivePane.Pages.Count
+		return self.PagesCount
 	def set_cell(self,R,C,Value,TableIndex=0,FontSize=-1):
 		#Range是一个非常重要的概念，可以设置字体，行间距，文本！！
 		self.Doc.Tables[TableIndex].Rows[R].Cells[C].Range.Text = Value
@@ -68,16 +74,21 @@ class easyWord(object):
 	def get_cell(self,R,C,TableIndex=0):
 		return self.Doc.Tables[TableIndex].Rows[R].Cells[C].Range.Text
 	def get_person_number(self):
-		print(">>>:>>")
-		print(self.Doc.Tables[0].Rows.Range.Text)
-		return self.Doc.Tables[1].Rows[0].Cells[2].Range.Text
+		return self.personNumber
+		# return self.Docx.tables[1].cell(0,2).text
+		# return self.Doc.Tables[1].Rows[0].Cells[2].Range.Text
 	def get_leader(self):
-		return self.Doc.Tables[0].Rows[0].Cells[3].Range.Text
+		return self.leader
+		# return self.Docx.tables[0].cell(0,3).text
+		#return self.Doc.Tables[0].Rows[0].Cells[3].Range.Text
 	def close(self):
+		if self.bUseDocx:
+			self.f.close()
 		self.Doc.Save()
 		self.Doc.Close()
 		self.WordAPP.Quit()
 		del self.WordAPP
+
 
 class easyExcel(object):
 	"""A class for opreating word file"""
@@ -158,58 +169,68 @@ def tasks(fileOrDir,RootPath,AreaTimeAdict,bRegenerate,bWithTime,bCopyFengmian,n
 	# 获取户主所在村庄的编号，前12位
 	HuZhuVillageCode = (fileOrDir.split('_')[0])[0:12]   #个人所在的村的Code
 	HuzhuPersonalCode= (fileOrDir.split('_')[0])[-3:]  #个人的Code，可以填在“软卷皮封面.doc”中的案卷号中
-	PersionalDir = RootPath + fileOrDir + "\\"
+	PersionalDir = os.path.join(RootPath,fileOrDir)
 	FileOrDirInPersionalDir_list = os.listdir(os.path.join(RootPath,fileOrDir))
 	filesCount=0
 	#到这行，卷内文件目录.doc肯定存在，无需判断
-	if bRegenerate:
-		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
-			os.remove(PersionalDir +"卷内文件目录.doc")
-		shutil.copyfile(RootPath+"卷内文件目录.doc", PersionalDir +"卷内文件目录.doc")
-	else:
-		if os.path.exists(PersionalDir +"卷内文件目录.doc"):
-			return
+
+	try:
+		if bRegenerate:
+			if os.path.exists(PersionalDir+"\\卷内文件目录.doc"):
+				os.remove(PersionalDir+"\\卷内文件目录.doc")
+			shutil.copyfile(RootPath+"\\卷内文件目录.doc", PersionalDir+"\\卷内文件目录.doc")
 		else:
-			shutil.copyfile(os.path.join(RootPath,"卷内文件目录.doc"), PersionalDir +"卷内文件目录.doc")
+			if os.path.exists(PersionalDir+"\\卷内文件目录.doc"):
+				pass
+			else:
+				shutil.copyfile(RootPath+"\\卷内文件目录.doc", PersionalDir+"\\卷内文件目录.doc")
+	except Exception as e:
+		raise("WRONG!!!")
+
 	#到这行，软卷皮封面.doc肯定存在或者self.CopyFengmian为false
-	if bCopyFengmian:
-		if os.path.exists(RootPath+"软卷皮封面.doc"):
-			if os.path.exists(PersionalDir +"软卷皮封面.doc"):
-				os.remove(PersionalDir +"软卷皮封面.doc")
-			shutil.copyfile(RootPath+"软卷皮封面.doc", PersionalDir +"软卷皮封面.doc")
+	try:
+		if bCopyFengmian:
+			if os.path.exists(PersionalDir +"\\软卷皮封面.doc"):
+				os.remove(PersionalDir +"\\软卷皮封面.doc")
+			shutil.copyfile(RootPath +"\\软卷皮封面.doc", PersionalDir +"\\软卷皮封面.doc")
+	except Exception as e:
+		raise("WRONG!!!")
 	# 获取所需数据
 	Pages_adict = {}
 	bWordOpen=False
 	bExcelOpen = False
 	try:
 		#对于一个特定的村民文件夹
-		for file in FileOrDirInPersionalDir_list:
-			if not os.path.isdir(os.path.join(RootPath,file)) and file.startswith(('1','2','3','4','5','6','7','8','9','0')):
+		for file in os.listdir(os.path.join(RootPath,fileOrDir)):
+			if not os.path.isdir(file) and file.startswith(('1','2','3','4','5','6','7','8','9','0')):
 				filesCount = filesCount + 1
 				(filepath,tempfilename) = os.path.split(file)
 				(filename,extension) = os.path.splitext(tempfilename)
-				print(filename)
-				if extension==r".docx" or extension==r".doc":
-					Word = easyWord(PersionalDir+file)
-					bWordOpen = True
-					Pages_adict[filename] = Word.pages_count()
-		# 			# if '登记簿' in file:
-		# 			# 	CunZhang=Word.get_leader()[:-2] #去掉最后两个字符：一个是BEL,一个是换行
-		# 			# 	PersonNumber = Word.get_person_number()
+				#print('filename:  '+filename)
+				fullName = PersionalDir+'\\'+file
+				# Word = easyWord(fullName,False,True)
+				if extension==r".doc" :
 					if '公示结果归户表' in file:
-						PersonNumber = Word.get_person_number()
-						print(PersonNumber)
-						# CunZhang=Word.get_leader()[:-2] #去掉最后两个字符：一个是BEL,一个是换行
-						# print(CunZhang)
-					Word.close()
-		# 		elif extension==r".xlsx" or extension==r".xls":
-		# 			print(PersionalDir+file)
-		# 			Excel = easyExcel(PersionalDir+file)
-		# 			bExcelOpen = True
-		# 			Pages_adict[filename] = Excel.pages_count()
-		# 			Excel.close()
-		# print(Pages_adict)
-		return
+						Word = easyWord(fullName,True)
+					else:
+						Word = easyWord(fullName,False)
+				elif extension==r'.docx':
+					Word = easyWord(fullName,True)
+				else:
+					continue
+				bWordOpen = True
+	# 			print('----------------------')
+				Pages_adict[filename] = Word.pages_count()
+	# # 			# if '登记簿' in file:
+	# # 			# 	CunZhang=Word.get_leader()[:-2] #去掉最后两个字符：一个是BEL,一个是换行
+	# # 			# 	PersonNumber = Word.get_person_number()
+				if '公示结果归户表' in file:
+					PersonNumber = re.sub("\D", "", Word.get_person_number())
+					print('共有：'+str(PersonNumber)+'人')
+					# CunZhang=Word.get_leader()[:-2] #去掉最后两个字符：一个是BEL,一个是换行
+					# print(CunZhang)
+				Word.close()
+			continue
 		nTemp = 0
 		bFirst = True
 		for x in Pages_adict.keys():
@@ -463,7 +484,7 @@ def check(RootPath,bRegenerate,bCopyFengmian,bWithTime,AreaTimeAdict,Processes,S
 				Status = False
 				return
 			Excel.close()
-		elif bWithTime and "地区代码及时间表.xls" in self.filesOrDirsInRoot:
+		elif bWithTime and "地区代码及时间表.xls" in filesOrDirsInRoot:
 			CDMF.print_blue_text("正在读取 \"地区代码及时间表.xls\"...")
 			log("正在读取 \"地区代码及时间表.xls\"...")
 			Excel = easyExcel(RootPath+"地区代码及时间表.xls")
@@ -626,7 +647,7 @@ if __name__ == '__main__':
 	Status = True
 	Processes = 1
 
-	check(os.path.join(rootpath,x),bRegenerate,bCopyFengmian,bWithTime,AreaTimeAdict,Processes,Status)
+	check(rootpath,bRegenerate,bCopyFengmian,bWithTime,AreaTimeAdict,Processes,Status)
 	index = 0
 	for x in FilesInRoot:
 		if os.path.isdir(os.path.join(rootpath,x)) and x.endswith('村'):
